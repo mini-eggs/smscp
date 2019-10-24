@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset=utf-8>
+  <title>tophone</title>
+  <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
+</head>
+<body>
+  <main>
+    <h1>tophone</h1>
+    {{ if .HasUser }}
+    <div>
+      <form action="/user/logout" method="POST">
+        <div>
+          <input type="submit" value="logout"/>
+        </div>
+      </form>
+      <h2>update account</h2>
+      <form action="/user/update" method="POST">
+        <div>
+          <input type="email" name="Email" placeholder="email" />
+        </div>
+        <div>
+          <input type="password" name="Password" placeholder="password" />
+        </div>
+        <div>
+          <input type="password" name="Verify" placeholder="verify" />
+        </div>
+        <div>
+          <input type="number" name="Phone" placeholder="phone number" />
+        </div>
+        <div>
+          <input type="submit" value="go"/>
+        </div>
+      </form>
+      <h2>create note</h2>
+      <form action="/note/create" method="POST">
+        <div>
+          <input type="text" name="Text" placeholder="text" autofocus />
+        </div>
+        <div>
+          <input type="submit" value="go"/>
+        </div>
+      </form>
+      {{ if .Notes }}
+      <h2>your notes</h2>
+        <div id="notes">
+          {{ range .Notes }}
+          <div>{{ .Text }}</div>
+          <br/>
+          {{ end }}
+        </div>
+        {{ if .NotesHasMore }}
+        <button id="more">load more</button>
+        <script>
+          (function() {
+            let page = 0;
+            let container = document.getElementById("notes");
+            let btn = document.getElementById("more");
+            btn.addEventListener("click", async function() {
+              btn.setAttribute("disabled", true);
+              btn.textContent = "loading";
+              try {
+                let req = await fetch(`/note/list/${++page}`)
+                let res = await req.json()
+                btn.removeAttribute("disabled");
+                btn.textContent = "load more";
+                if(!res.HasMore) {
+                  btn.parentElement.removeChild(btn);
+                }
+                for(let note of res.Notes) {
+                  let el = document.createElement("div");
+                  el.textContent = note.NoteText;
+                  container.appendChild(el);
+                  container.appendChild(document.createElement("br"));
+                }
+              }
+              catch(e) {
+                btn.textContent = e.toString();
+              }
+            });
+          })();
+        </script>
+        {{ end }}
+      {{ end }}
+    </div>
+    {{ else }}
+    <div>
+      <h2>create account</h2>
+      <form action="/user/create" method="POST">
+        <div>
+          <input type="email" name="Email" placeholder="email" autofocus required />
+        </div>
+        <div>
+          <input type="password" name="Password" placeholder="password" required />
+        </div>
+        <div>
+          <input type="password" name="Verify" placeholder="verify" required />
+        </div>
+        <div>
+          <input type="number" name="Phone" placeholder="phone number" required />
+        </div>
+        <div>
+          <input type="submit" value="go"/>
+        </div>
+      </form>
+      <h2>login</h2>
+      <form action="/user/login" method="POST">
+        <div>
+          <input type="email" name="Email" placeholder="email" />
+        </div>
+        <div>
+          <input type="password" name="Password" placeholder="password" />
+        </div>
+        <div>
+          <input type="submit" value="go"/>
+        </div>
+      </form>
+    </div>
+    {{ end }}
+  </main>
+</body>
