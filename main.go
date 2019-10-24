@@ -286,18 +286,22 @@ func (app app) Page(c *gin.Context) {
 		return
 	}
 
-	page := 0
-	notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
-	if err != nil {
-		app.error(c, err)
-		return
-	}
+	/*
+		page := 0
+		notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
+		if err != nil {
+			app.error(c, err)
+			return
+		}
+	*/
 
 	c.HTML(http.StatusOK, "main.html", gin.H{
-		"HasUser":      true,
-		"User":         user,
-		"Notes":        notes,
-		"NotesHasMore": hasMore,
+		"HasUser": true,
+		"User":    user,
+		/*
+			"Notes":        notes,
+			"NotesHasMore": hasMore,
+		*/
 	})
 }
 

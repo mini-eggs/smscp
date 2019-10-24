@@ -10,6 +10,19 @@
     <h1>tophone</h1>
     {{ if .HasUser }}
     <div>
+      <h2>install cli</h2>
+      <p>must have <a href="https://golang.org/">go</a> installed</p>
+      <pre><code>go get github.com/mini-eggs/tophone/cmd/tophone</code></pre>
+      <h2>create note</h2>
+      <form action="/note/create" method="POST">
+        <div>
+          <input type="text" name="Text" placeholder="text" autofocus />
+        </div>
+        <div>
+          <input type="submit" value="go"/>
+        </div>
+      </form>
+      <h2>logout</h2>
       <form action="/user/logout" method="POST">
         <div>
           <input type="submit" value="logout"/>
@@ -28,15 +41,6 @@
         </div>
         <div>
           <input type="number" name="Phone" placeholder="phone number" />
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
-      </form>
-      <h2>create note</h2>
-      <form action="/note/create" method="POST">
-        <div>
-          <input type="text" name="Text" placeholder="text" autofocus />
         </div>
         <div>
           <input type="submit" value="go"/>
