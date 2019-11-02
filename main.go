@@ -17,7 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	"github.com/sfreiberg/gotwilio"
+	"github.com/plivo/plivo-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -674,8 +674,17 @@ func (sms sms) Send(number int, text string) error {
 		to = fmt.Sprintf("%d", number)
 	}
 
-	twilio := gotwilio.NewTwilioClient(sms.id, sms.secret)
-	_, _, err := twilio.SendMMS(sms.from, to, text, "", "", "")
+	client, err := plivo.NewClient(sms.id, sms.secret, &plivo.ClientOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Messages.Create(plivo.MessageCreateParams{
+		Src:  sms.from,
+		Dst:  to,
+		Text: text,
+	})
+
 	return err
 }
 
@@ -694,7 +703,7 @@ func build(db *gorm.DB) server {
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	router.Use(sessions.Sessions("lasso_sessions", store))
 
-	sms := SMSDefault(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
+	sms := SMSDefault(os.Getenv("PLIVO_ID"), os.Getenv("PLIVO_TOKEN"), os.Getenv("PLIVO_FROM"))
 	security := SecurityDefault(os.Getenv("JWT_SECRET"))
 	data := DBDefault(db, security)
 	app := AppDefault(data, sms)
