@@ -3,48 +3,67 @@
 <head>
   <meta charset=utf-8>
   <title>tophone</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/dark.min.css">
   <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
 </head>
 <body>
+  <style>
+    fieldset { border: 1px #0096bfab solid; border-radius: 6px; margin: 0; margin-bottom: 6px; padding: 10px; }
+    legend { font-size: 0.9em; font-weight: 600; }
+  </style>
   <main>
     <h1>tophone</h1>
     {{ if .HasUser }}
     <div>
-      <h2>install cli</h2>
-      <p>must have <a href="https://golang.org/">go</a> installed</p>
+      <p>If you don't like using websites for something that can be put into a
+      command line interface application you're invited to install the command
+      line interface of tophone. To install you must have the <a href="https://golang.org/">Go</a>
+      programming language installed. After installation run:</p>
       <pre><code>go get github.com/mini-eggs/tophone/cmd/tophone</code></pre>
-      <h2>create note</h2>
+      <p>This will build a binary and place it at <code>$HOME/go/bin/tophone</code>. 
+      If you've installed Go correctly this will already be in your path. If not I
+      recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>
+      Run <code>tophone help</code> for a list of options.</p>
       <form action="/note/create" method="POST">
-        <div>
-          <input type="text" name="Text" placeholder="text" autofocus />
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
+        <fieldset>
+          <legend>create note</legend>
+          <div>
+            <input type="text" name="Text" placeholder="text" autofocus />
+          </div>
+          <div>
+            <input type="submit" value="go"/>
+          </div>
+        </fieldset>
       </form>
-      <h2>logout</h2>
+      <br/>
       <form action="/user/logout" method="POST">
-        <div>
-          <input type="submit" value="logout"/>
-        </div>
+        <fieldset>
+          <legend>logout</legend>
+          <div>
+            <input type="submit" value="logout"/>
+          </div>
+        </fieldset>
       </form>
-      <h2>update account</h2>
+      <br/>
       <form action="/user/update" method="POST">
-        <div>
-          <input type="email" name="Email" placeholder="email" />
-        </div>
-        <div>
-          <input type="password" name="Password" placeholder="password" />
-        </div>
-        <div>
-          <input type="password" name="Verify" placeholder="verify" />
-        </div>
-        <div>
-          <input type="number" name="Phone" placeholder="phone number" />
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
+        <fieldset>
+          <legend>update account</legend>
+          <div>
+            <input type="email" name="Email" placeholder="email" />
+          </div>
+          <div>
+            <input type="password" name="Password" placeholder="password" />
+          </div>
+          <div>
+            <input type="password" name="Verify" placeholder="verify" />
+          </div>
+          <div>
+            <input type="tel" pattern="^[0-9-+\s()]*$" name="Phone" placeholder="phone number" required>
+          </div>
+          <div>
+            <input type="submit" value="go"/>
+          </div>
+        </fieldset>
       </form>
       {{ if .Notes }}
       <h2>your notes</h2>
@@ -89,9 +108,23 @@
       {{ end }}
     </div>
     {{ else }}
-    <div>
-      <h2>create account</h2>
-      <form action="/user/create" method="POST">
+    <p>The <strong>easiest</strong> way to send text to your mobile device.</p>
+    <p>Start by creating an account (or signing into your existing account) then
+    creating a "note" - these notes are immediately sent to the number you've
+    provided.</p>
+    <p>If you don't like using websites for something that can be put into a
+    command line interface application you're invited to install the command
+    line interface of tophone. To install you must have the <a href="https://golang.org/">Go</a>
+    programming language installed. After installation run:</p>
+    <pre><code>go get github.com/mini-eggs/tophone/cmd/tophone</code></pre>
+    <p>This will build a binary and place it at <code>$HOME/go/bin/tophone</code>. 
+    If you've installed Go correctly this will already be in your path. If not I
+    recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>
+    Run <code>tophone help</code> for a list of options. You may also create
+    your account via the command line interface, <code>tophone register</code>.</p>
+    <form action="/user/create" method="POST">
+      <fieldset>
+        <legend>create account</legend>
         <div>
           <input type="email" name="Email" placeholder="email" autofocus required />
         </div>
@@ -102,14 +135,17 @@
           <input type="password" name="Verify" placeholder="verify" required />
         </div>
         <div>
-          <input type="number" name="Phone" placeholder="phone number" required />
+          <input type="tel" pattern="^[0-9-+\s()]*$" name="Phone" placeholder="phone number" required>
         </div>
         <div>
           <input type="submit" value="go"/>
         </div>
-      </form>
-      <h2>login</h2>
-      <form action="/user/login" method="POST">
+      </fieldset>
+    </form>
+    <br/>
+    <form action="/user/login" method="POST">
+      <fieldset>
+        <legend>login</legend>
         <div>
           <input type="email" name="Email" placeholder="email" />
         </div>
@@ -119,8 +155,8 @@
         <div>
           <input type="submit" value="go"/>
         </div>
-      </form>
-    </div>
+      </fieldset>
+    </form>
     {{ end }}
   </main>
 </body>

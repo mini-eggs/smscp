@@ -213,6 +213,39 @@ func (app app) UserCreate(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
+func (app app) UserCreateCLI(c *gin.Context) {
+	var payload struct {
+		Email, Password, Verify string
+		Phone                   int
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	if payload.Password != payload.Verify || payload.Password == "" {
+		app.error(c, errors.New("invalid password; either not equal or no password entered"))
+		return
+	}
+
+	user, err := app.data.UserCreate(payload.Email, payload.Password, payload.Phone)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	s := sessions.Default(c)
+	s.Set(KEY_USER_SESSION_TOKEN, user.Token())
+	if err := s.Save(); err != nil {
+		app.error(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Token": user.Token()})
+}
+
 func (app app) UserUpdate(c *gin.Context) {
 	var payload struct {
 		Email, Password, Verify string
@@ -644,49 +677,6 @@ func (sms sms) Send(number int, text string) error {
 	twilio := gotwilio.NewTwilioClient(sms.id, sms.secret)
 	_, _, err := twilio.SendMMS(sms.from, to, text, "", "", "")
 	return err
-
-	// var to string
-	// if number < 10000000000 {
-	// 	to = fmt.Sprintf("1%d", number)
-	// } else {
-	// 	to = fmt.Sprintf("%d", number)
-	// }
-
-	// body := strings.NewReader(fmt.Sprintf(`text=%s&phones=%s%s`, text, "%2B", to))
-	// req, err := http.NewRequest("POST", "https://rest.textmagic.com/api/v2/messages", body)
-	// if err != nil {
-	// 	return err
-	// }
-	// req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	// req.Header.Set("Accept", "application/json")
-	// req.Header.Set("X-Tm-Username", sms.user)
-	// req.Header.Set("X-Tm-Key", sms.secret)
-
-	// resp, err := http.DefaultClient.Do(req)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer resp.Body.Close()
-
-	// bytes, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// var response struct {
-	// 	Message string /* Only available if error occurred. */
-	// }
-	// err = json.Unmarshal(bytes, &response)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if response.Message != "" {
-	// 	// return errors.New(response.Message)
-	// 	return errors.New("failed to send sms")
-	// }
-
-	// return nil
 }
 
 // startup
@@ -701,23 +691,27 @@ type server interface {
 func build(db *gorm.DB) server {
 	router := gin.Default()
 	router.LoadHTMLGlob("html/*")
-	// sms := SMSDefault(os.Getenv("TEXTMAGIC_USER"), os.Getenv("TEXTMAGIC_SECRET"))
+	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
+	router.Use(sessions.Sessions("lasso_sessions", store))
+
 	sms := SMSDefault(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 	security := SecurityDefault(os.Getenv("JWT_SECRET"))
 	data := DBDefault(db, security)
 	app := AppDefault(data, sms)
-	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
-	router.Use(sessions.Sessions("lasso_sessions", store))
+
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
-	router.POST("/note/create", app.NoteCreate)
-	router.GET("/note/list/:page", app.NoteListJSON)
+
 	router.POST("/user/login", app.UserLogin)
 	router.POST("/user/create", app.UserCreate)
 	router.POST("/user/update", app.UserUpdate)
 	router.POST("/user/logout", app.UserLogout)
 
+	router.POST("/note/create", app.NoteCreate)
+	router.GET("/note/list/:page", app.NoteListJSON)
+
 	router.POST("/cli/user/login", app.UserLoginCLI)
+	router.POST("/cli/user/create", app.UserCreateCLI)
 	router.POST("/cli/note/create", app.NoteCreateCLI)
 
 	return router
