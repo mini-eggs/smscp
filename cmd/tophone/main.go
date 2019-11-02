@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	BASE = "http://localhost:3000"
-	// BASE       = "https://tophone.evanjon.es"
+	// BASE = "http://localhost:3000"
+	BASE         = "https://tophone.evanjon.es"
 	API_LOGIN    = BASE + "/cli/user/login"
 	API_REGISTER = BASE + "/cli/user/create"
 	API_CREATE   = BASE + "/cli/note/create"
