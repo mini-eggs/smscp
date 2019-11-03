@@ -36,6 +36,7 @@ type User interface {
 
 type Note interface {
 	ID() uint
+	Short() string
 	Text() string
 	Token() string /* Unique per note (i.e. like an ID), only let author see. */
 }
@@ -54,6 +55,7 @@ const (
 
 type dataLayer interface {
 	UserGet(token string) (User, error)
+	UserGetByNumber(number int) (User, error)
 	UserLogin(email, pass string) (User, error)
 	UserCreate(email, pass string, phone int) (User, error)
 	NoteGetList(user User, page, count int) ([]Note, bool, error)
@@ -69,6 +71,38 @@ func AppDefault(data dataLayer, sms smsLayer) app {
 		data,
 		sms,
 	}
+}
+
+func (app app) HookSMS(c *gin.Context) {
+	var payload struct {
+		From, To, Text string
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	number, err := strconv.Atoi(payload.From)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	user, err := app.data.UserGetByNumber(number)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	_, err = app.data.NoteCreate(user, payload.Text)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	c.String(http.StatusOK, "message received")
 }
 
 func (app app) NoteCreate(c *gin.Context) {
@@ -319,22 +353,18 @@ func (app app) Page(c *gin.Context) {
 		return
 	}
 
-	/*
-		page := 0
-		notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
-		if err != nil {
-			app.error(c, err)
-			return
-		}
-	*/
+	page := 0
+	notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
 
 	c.HTML(http.StatusOK, "main.html", gin.H{
-		"HasUser": true,
-		"User":    user,
-		/*
-			"Notes":        notes,
-			"NotesHasMore": hasMore,
-		*/
+		"HasUser":      true,
+		"User":         user,
+		"Notes":        notes,
+		"NotesHasMore": hasMore,
 	})
 }
 
@@ -475,6 +505,31 @@ func (db db) UserGet(token string) (User, error) {
 	return &user, nil
 }
 
+func (db db) UserGetByNumber(number int) (User, error) {
+	var alt int
+	if number > 10000000000 {
+		alt = number - 10000000000
+	} else {
+		alt = number + 10000000000
+	}
+
+	var user ToPhoneUser
+	status := db.conn.Where("user_phone LIKE ? OR user_phone LIKE ?", number, alt).First(&user)
+	if status.Error != nil {
+		return nil, status.Error
+	}
+
+	token, err := db.security.TokenCreate(jwt.MapClaims{"UserID": user.Model.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	user.token = token
+	user.db = db
+
+	return &user, nil
+}
+
 func (db db) UserCreate(email, plaintext string, phone int) (User, error) {
 	pass, err := db.security.HashCreate(plaintext)
 	if err != nil {
@@ -524,6 +579,7 @@ func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
 
 	var notes []Note
 	for _, note := range dbnotes {
+		note.NoteShort = note.Short() /* special case, bc in templates we can just call method */
 		notes = append(notes, note)
 	}
 
@@ -604,10 +660,19 @@ func (ToPhoneUser *ToPhoneUser) Save() error {
 
 type ToPhoneNote struct {
 	gorm.Model
-	NoteText string `sql:"type:text"`
-	UserID   uint
-	token    string
-	db       db
+	NoteText  string `sql:"type:text"`
+	NoteShort string `gorm:"-"` /* ignore! */
+	UserID    uint
+	token     string
+	db        db
+}
+
+func (ToPhoneNote ToPhoneNote) Short() string {
+	top := 50
+	if len(ToPhoneNote.NoteText) > top {
+		return ToPhoneNote.NoteText[:top] + "..."
+	}
+	return ToPhoneNote.NoteText
 }
 
 func (ToPhoneNote ToPhoneNote) Text() string  { return ToPhoneNote.NoteText }
@@ -722,6 +787,8 @@ func build(db *gorm.DB) server {
 	router.POST("/cli/user/login", app.UserLoginCLI)
 	router.POST("/cli/user/create", app.UserCreateCLI)
 	router.POST("/cli/note/create", app.NoteCreateCLI)
+
+	router.POST("/hook/sms/receive", app.HookSMS)
 
 	return router
 }

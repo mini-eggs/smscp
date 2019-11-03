@@ -72,14 +72,17 @@
         </fieldset>
       </form>
       {{ if .Notes }}
-      <h2>your notes</h2>
+      <h2>notes</h2>
         <div id="notes">
           {{ range .Notes }}
-          <div>{{ .Text }}</div>
-          <br/>
+          <details>
+            <summary>{{ .Short }}</summary>
+            <p>{{ .Text }}</p>
+          </details>
           {{ end }}
         </div>
         {{ if .NotesHasMore }}
+        <br/>
         <button id="more">load more</button>
         <script>
           (function() {
@@ -98,10 +101,14 @@
                   btn.parentElement.removeChild(btn);
                 }
                 for(let note of res.Notes) {
-                  let el = document.createElement("div");
-                  el.textContent = note.NoteText;
-                  container.appendChild(el);
-                  container.appendChild(document.createElement("br"));
+                  let details = document.createElement("details");
+                  let summary = document.createElement("summary");
+                  summary.textContent = note.NoteShort;
+                  details.appendChild(summary)
+                  let p = document.createElement("p");
+                  p.textContent = note.NoteText;
+                  details.appendChild(p)
+                  container.appendChild(details);
                 }
               }
               catch(e) {
