@@ -64,7 +64,7 @@
             <input type="password" name="Verify" placeholder="verify" />
           </div>
           <div>
-            <input type="tel" pattern="^[0-9-+\s()]*$" name="Phone" placeholder="phone number" required>
+            <input type="text" name="Phone" placeholder="phone number" required>
           </div>
           <div>
             <input type="submit" value="go"/>
@@ -149,7 +149,7 @@
           <input type="password" name="Verify" placeholder="verify" required />
         </div>
         <div>
-          <input type="tel" pattern="^[0-9-+\s()]*$" name="Phone" placeholder="phone number" required>
+          <input type="phone" name="Phone" placeholder="phone number" required>
         </div>
         <div>
           <input type="submit" value="go"/>
@@ -173,4 +173,17 @@
     </form>
     {{ end }}
   </main>
+  <script src="https://unpkg.com/vanilla-text-mask@5.1.1/dist/vanillaTextMask.js"></script>
+  <script>
+    (function() {
+      var phoneMask = ['(', /[1-9]/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
+      var elements = document.querySelectorAll("input[name='Phone']");
+      for(var e = 0; e < elements.length; e++) {
+        var maskedInputController = vanillaTextMask.maskInput({
+          inputElement: elements[e],
+          mask: phoneMask
+        });
+      }
+    })();
+  </script>
 </body>

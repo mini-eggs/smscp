@@ -18,6 +18,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/plivo/plivo-go"
+	"github.com/ttacon/libphonenumber"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -26,11 +27,11 @@ import (
 type User interface {
 	ID() uint
 	Email() string
-	Phone() int
+	Phone() string
 	Token() string /* Stored in session, secret, unique per session. */
 	SetEmail(string)
 	SetPass(string)
-	SetPhone(int)
+	SetPhone(string)
 	Save() error
 }
 
@@ -55,15 +56,15 @@ const (
 
 type dataLayer interface {
 	UserGet(token string) (User, error)
-	UserGetByNumber(number int) (User, error)
+	UserGetByNumber(number string) (User, error)
 	UserLogin(email, pass string) (User, error)
-	UserCreate(email, pass string, phone int) (User, error)
+	UserCreate(email, pass, phone string) (User, error)
 	NoteGetList(user User, page, count int) ([]Note, bool, error)
 	NoteCreate(user User, text string) (Note, error)
 }
 
 type smsLayer interface {
-	Send(number int, text string) error
+	Send(number, text string) error
 }
 
 func AppDefault(data dataLayer, sms smsLayer) app {
@@ -84,13 +85,7 @@ func (app app) HookSMS(c *gin.Context) {
 		return
 	}
 
-	number, err := strconv.Atoi(payload.From)
-	if err != nil {
-		app.error(c, err)
-		return
-	}
-
-	user, err := app.data.UserGetByNumber(number)
+	user, err := app.data.UserGetByNumber(payload.From)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -216,8 +211,7 @@ func (app app) UserLoginCLI(c *gin.Context) {
 
 func (app app) UserCreate(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify string
-		Phone                   int
+		Email, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -231,7 +225,17 @@ func (app app) UserCreate(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserCreate(payload.Email, payload.Password, payload.Phone)
+	phone, err := libphonenumber.Parse(payload.Phone, "US")
+	if err != nil {
+		app.error(c, err)
+		return
+	} else if !libphonenumber.IsValidNumber(phone) {
+		app.error(c, errors.New("invalid phone number; try again"))
+		return
+	}
+	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
+
+	user, err := app.data.UserCreate(payload.Email, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -249,8 +253,7 @@ func (app app) UserCreate(c *gin.Context) {
 
 func (app app) UserCreateCLI(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify string
-		Phone                   int
+		Email, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -264,7 +267,17 @@ func (app app) UserCreateCLI(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserCreate(payload.Email, payload.Password, payload.Phone)
+	phone, err := libphonenumber.Parse(payload.Phone, "US")
+	if err != nil {
+		app.error(c, err)
+		return
+	} else if !libphonenumber.IsValidNumber(phone) {
+		app.error(c, errors.New("invalid phone number; try again"))
+		return
+	}
+	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
+
+	user, err := app.data.UserCreate(payload.Email, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -282,8 +295,7 @@ func (app app) UserCreateCLI(c *gin.Context) {
 
 func (app app) UserUpdate(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify string
-		Phone                   int
+		Email, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -311,8 +323,16 @@ func (app app) UserUpdate(c *gin.Context) {
 		user.SetPass(payload.Password)
 	}
 
-	if payload.Phone != 0 {
-		user.SetPhone(payload.Phone)
+	if payload.Phone != "" {
+		phone, err := libphonenumber.Parse(payload.Phone, "US")
+		if err != nil {
+			app.error(c, err)
+			return
+		} else if !libphonenumber.IsValidNumber(phone) {
+			app.error(c, errors.New("invalid phone number; try again"))
+			return
+		}
+		user.SetPhone(fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber()))
 	}
 
 	err = user.Save()
@@ -505,16 +525,9 @@ func (db db) UserGet(token string) (User, error) {
 	return &user, nil
 }
 
-func (db db) UserGetByNumber(number int) (User, error) {
-	var alt int
-	if number > 10000000000 {
-		alt = number - 10000000000
-	} else {
-		alt = number + 10000000000
-	}
-
+func (db db) UserGetByNumber(number string) (User, error) {
 	var user ToPhoneUser
-	status := db.conn.Where("user_phone LIKE ? OR user_phone LIKE ?", number, alt).First(&user)
+	status := db.conn.Where("user_phone = ?", number).First(&user)
 	if status.Error != nil {
 		return nil, status.Error
 	}
@@ -530,7 +543,7 @@ func (db db) UserGetByNumber(number int) (User, error) {
 	return &user, nil
 }
 
-func (db db) UserCreate(email, plaintext string, phone int) (User, error) {
+func (db db) UserCreate(email, plaintext, phone string) (User, error) {
 	pass, err := db.security.HashCreate(plaintext)
 	if err != nil {
 		return nil, errors.New("failed to create user; password hash not obtained")
@@ -616,7 +629,7 @@ type ToPhoneUser struct {
 	gorm.Model
 	UserEmail string `gorm:"unique;not null"`
 	UserPass  string
-	UserPhone int
+	UserPhone string
 	UserNotes []ToPhoneNote
 	token     string
 	err       error
@@ -624,7 +637,7 @@ type ToPhoneUser struct {
 }
 
 func (ToPhoneUser *ToPhoneUser) Email() string { return ToPhoneUser.UserEmail }
-func (ToPhoneUser *ToPhoneUser) Phone() int    { return ToPhoneUser.UserPhone }
+func (ToPhoneUser *ToPhoneUser) Phone() string { return ToPhoneUser.UserPhone }
 func (ToPhoneUser *ToPhoneUser) ID() uint      { return ToPhoneUser.Model.ID }
 func (ToPhoneUser *ToPhoneUser) Token() string { return ToPhoneUser.token }
 
@@ -632,7 +645,7 @@ func (ToPhoneUser *ToPhoneUser) SetEmail(value string) {
 	ToPhoneUser.UserEmail = value
 }
 
-func (ToPhoneUser *ToPhoneUser) SetPhone(value int) {
+func (ToPhoneUser *ToPhoneUser) SetPhone(value string) {
 	ToPhoneUser.UserPhone = value
 }
 
@@ -731,14 +744,7 @@ func SMSDefault(id, secret, from string) sms {
 	return sms{id, secret, from}
 }
 
-func (sms sms) Send(number int, text string) error {
-	var to string
-	if number < 10000000000 {
-		to = fmt.Sprintf("1%d", number)
-	} else {
-		to = fmt.Sprintf("%d", number)
-	}
-
+func (sms sms) Send(to, text string) error {
 	client, err := plivo.NewClient(sms.id, sms.secret, &plivo.ClientOptions{})
 	if err != nil {
 		return err
