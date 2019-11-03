@@ -30,6 +30,36 @@
       If you've installed Go correctly this will already be in your path. If not I
       recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>. 
       Run <code>tophone help</code> for a list of options.</p>
+      {{ if .Latest }}
+      <form id='latest-form' action="/placeholder">
+        <fieldset>
+          <legend>latest note</legend>
+          <div>
+            <input type="text" name="Text" placeholder="text" value='{{ .Latest.Short }}' disabled/>
+          </div>
+          <div>
+            <input type="submit" value="copy to clipboard"/>
+          </div>
+        </fieldset>
+      </form>
+      <script>
+        (function() {
+          var form = document.getElementById('latest-form');
+          form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            var el = document.createElement('textarea');
+            el.value = '{{ .Latest.Text }}';
+            el.setAttribute('readonly', '');
+            el.style = {position: 'absolute', left: '-9999px'};
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+          });
+        })();
+      </script>
+      <br/>
+      {{ end }}
       <form action="/note/create" method="POST">
         <fieldset>
           <legend>create note</legend>
@@ -72,52 +102,59 @@
         </fieldset>
       </form>
       {{ if .Notes }}
-      <h2>notes</h2>
-        <div id="notes">
-          {{ range .Notes }}
-          <details>
-            <summary>{{ .Short }}</summary>
-            <p>{{ .Text }}</p>
-          </details>
+      <br/>
+      <form id='latest-form' action="/placeholder">
+        <fieldset>
+          <legend>notes</legend>
+          <div id="notes">
+            {{ range .Notes }}
+            <details>
+              <summary>{{ .Short }}</summary>
+              <p>{{ .Text }}</p>
+            </details>
+            {{ end }}
+          </div>
+          {{ if .NotesHasMore }}
+          <br/>
+          <button id="more">load more</button>
+          <script>
+            (function() {
+              let page = 0;
+              let container = document.getElementById("notes");
+              let btn = document.getElementById("more");
+              btn.addEventListener("click", async function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                btn.setAttribute("disabled", true);
+                btn.textContent = "loading";
+                try {
+                  let req = await fetch(`/note/list/${++page}`)
+                  let res = await req.json()
+                  btn.removeAttribute("disabled");
+                  btn.textContent = "load more";
+                  if(!res.NotesHasMore) {
+                    btn.parentElement.removeChild(btn);
+                  }
+                  for(let note of res.Notes) {
+                    let details = document.createElement("details");
+                    let summary = document.createElement("summary");
+                    summary.textContent = note.NoteShort;
+                    details.appendChild(summary)
+                    let p = document.createElement("p");
+                    p.textContent = note.NoteText;
+                    details.appendChild(p)
+                    container.appendChild(details);
+                  }
+                }
+                catch(e) {
+                  btn.textContent = e.toString();
+                }
+              });
+            })();
+          </script>
           {{ end }}
-        </div>
-        {{ if .NotesHasMore }}
-        <br/>
-        <button id="more">load more</button>
-        <script>
-          (function() {
-            let page = 0;
-            let container = document.getElementById("notes");
-            let btn = document.getElementById("more");
-            btn.addEventListener("click", async function() {
-              btn.setAttribute("disabled", true);
-              btn.textContent = "loading";
-              try {
-                let req = await fetch(`/note/list/${++page}`)
-                let res = await req.json()
-                btn.removeAttribute("disabled");
-                btn.textContent = "load more";
-                if(!res.HasMore) {
-                  btn.parentElement.removeChild(btn);
-                }
-                for(let note of res.Notes) {
-                  let details = document.createElement("details");
-                  let summary = document.createElement("summary");
-                  summary.textContent = note.NoteShort;
-                  details.appendChild(summary)
-                  let p = document.createElement("p");
-                  p.textContent = note.NoteText;
-                  details.appendChild(p)
-                  container.appendChild(details);
-                }
-              }
-              catch(e) {
-                btn.textContent = e.toString();
-              }
-            });
-          })();
-        </script>
-        {{ end }}
+        </fieldset>
+      </form>
       {{ end }}
     </div>
     {{ else }}

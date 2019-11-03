@@ -60,6 +60,8 @@ type dataLayer interface {
 	UserLogin(email, pass string) (User, error)
 	UserCreate(email, pass, phone string) (User, error)
 	NoteGetList(user User, page, count int) ([]Note, bool, error)
+	NoteGetLatest(user User) (Note, error)
+	NoteGetLatestWithTime(user User, t time.Duration) (Note, error)
 	NoteCreate(user User, text string) (Note, error)
 }
 
@@ -160,6 +162,32 @@ func (app app) NoteCreateCLI(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"Message": "complete"})
+}
+
+func (app app) NoteLatestCLI(c *gin.Context) {
+	var payload struct {
+		Token string
+	}
+
+	err := c.Bind(&payload)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	user, err := app.currentUserFromToken(payload.Token)
+	if err != nil {
+		app.error(c, errors.New("not logged in; or something else terribly wrong"))
+		return
+	}
+
+	note, err := app.data.NoteGetLatest(user)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Message": "complete", "Note": note})
 }
 
 func (app app) UserLogin(c *gin.Context) {
@@ -380,11 +408,18 @@ func (app app) Page(c *gin.Context) {
 		return
 	}
 
+	latest, err := app.data.NoteGetLatestWithTime(user, 5*time.Minute)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+
 	c.HTML(http.StatusOK, "main.html", gin.H{
 		"HasUser":      true,
 		"User":         user,
 		"Notes":        notes,
 		"NotesHasMore": hasMore,
+		"Latest":       latest,
 	})
 }
 
@@ -599,6 +634,32 @@ func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
 	return notes, hasMore, status.Error
 }
 
+func (db db) NoteGetLatest(user User) (Note, error) {
+	var latest ToPhoneNote
+	status := db.conn.
+		Where("user_id = ?", user.ID()).
+		Order("created_at ASC").
+		Find(&latest)
+	if status.Error != nil {
+		return nil, nil /* not having this is not an error */
+	}
+	latest.NoteShort = latest.Short() /* special case, bc in templates we can just call method */
+	return latest, nil
+}
+
+func (db db) NoteGetLatestWithTime(user User, t time.Duration) (Note, error) {
+	var latest ToPhoneNote
+	status := db.conn.
+		Where("user_id = ? AND created_at >= NOW() - INTERVAL ? SECOND", user.ID(), t.Seconds()).
+		Order("created_at ASC").
+		Find(&latest)
+	if status.Error != nil {
+		return nil, nil /* not having this is not an error */
+	}
+	latest.NoteShort = latest.Short() /* special case, bc in templates we can just call method */
+	return latest, nil
+}
+
 func (db db) NoteCreate(user User, text string) (Note, error) {
 	note := ToPhoneNote{
 		NoteText: text,
@@ -793,6 +854,7 @@ func build(db *gorm.DB) server {
 	router.POST("/cli/user/login", app.UserLoginCLI)
 	router.POST("/cli/user/create", app.UserCreateCLI)
 	router.POST("/cli/note/create", app.NoteCreateCLI)
+	router.POST("/cli/note/latest", app.NoteLatestCLI)
 
 	router.POST("/hook/sms/receive", app.HookSMS)
 

@@ -24,6 +24,7 @@ const (
 	API_LOGIN    = BASE + "/cli/user/login"
 	API_REGISTER = BASE + "/cli/user/create"
 	API_CREATE   = BASE + "/cli/note/create"
+	API_LATEST   = BASE + "/cli/note/latest"
 )
 
 type config struct {
@@ -206,6 +207,58 @@ func create(c *cli.Context) error {
 	return nil
 }
 
+func latest(c *cli.Context) error {
+	usr, err := user.Current()
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve current user from operating system")
+	}
+
+	bytes, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".tophone"))
+	if err != nil {
+		return errors.New("failed to read local file; please login")
+	}
+
+	var cfg config
+	err = json.Unmarshal(bytes, &cfg)
+	if err != nil {
+		return errors.New("failed to read local file; file of wrong format; please login")
+	} else if cfg.Token == "" {
+		return fmt.Errorf("failed to get user token; please login")
+	}
+
+	resp, err := http.PostForm(API_LATEST, url.Values{"Token": {cfg.Token}})
+	if err != nil {
+		return errors.Wrap(err, "failed to create request to remote server")
+	}
+	defer resp.Body.Close()
+
+	res, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response from to remote server")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.Wrap(fmt.Errorf(string(res)), "OK not received from remote server")
+	}
+
+	var response struct {
+		Note struct {
+			NoteText string
+		}
+	}
+	err = json.Unmarshal(res, &response)
+	if err != nil {
+		return errors.Wrap(err, "invalid response from to remote server")
+	}
+
+	if response.Note.NoteText == "" {
+		return errors.New("no note availavle; you have not made any?")
+	}
+
+	fmt.Println(response.Note.NoteText)
+	return nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "tophone"
@@ -216,6 +269,7 @@ func main() {
 		{Name: "register", Action: register},
 		{Name: "login", Action: login},
 		{Name: "new", Action: create},
+		{Name: "latest", Action: latest},
 	}
 
 	if err := app.Run(os.Args); err != nil {
