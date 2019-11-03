@@ -6,7 +6,7 @@ import (
 	"tophone.evanjon.es/internal/api"
 	"tophone.evanjon.es/internal/db"
 	"tophone.evanjon.es/internal/security"
-	"tophone.evanjon.es/internal/sms"
+	"tophone.evanjon.es/internal/sms/twilio"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -25,7 +25,7 @@ func Build() (*gin.Engine, error) {
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	router.Use(sessions.Sessions("lasso_sessions", store))
 
-	sms := sms.SMSDefault(os.Getenv("PLIVO_ID"), os.Getenv("PLIVO_TOKEN"), os.Getenv("PLIVO_FROM"))
+	sms := twilio.SMSDefault(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 	security := security.SecurityDefault(os.Getenv("JWT_SECRET"))
 	data := db.DBDefault(databaseConn, security)
 	app := api.AppDefault(data, sms)

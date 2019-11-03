@@ -38,6 +38,7 @@ type dataLayer interface {
 
 type smsLayer interface {
 	Send(number, text string) error
+	Hook(c *gin.Context) (number, text string, err error)
 }
 
 func AppDefault(data dataLayer, sms smsLayer) app {
@@ -48,23 +49,19 @@ func AppDefault(data dataLayer, sms smsLayer) app {
 }
 
 func (app app) HookSMS(c *gin.Context) {
-	var payload struct {
-		From, To, Text string
-	}
-
-	err := c.Bind(&payload)
+	num, text, err := app.sms.Hook(c)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
 
-	user, err := app.data.UserGetByNumber(payload.From)
+	user, err := app.data.UserGetByNumber(num)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
 
-	_, err = app.data.NoteCreate(user, payload.Text)
+	_, err = app.data.NoteCreate(user, text)
 	if err != nil {
 		app.error(c, err)
 		return

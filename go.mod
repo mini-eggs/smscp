@@ -11,6 +11,7 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.8.0
 	github.com/plivo/plivo-go v4.1.0+incompatible
+	github.com/sfreiberg/gotwilio v0.0.0-20191103223526-1b5db731dc0a
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.0.1
 	github.com/urfave/cli v1.22.1

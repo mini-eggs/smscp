@@ -10,10 +10,11 @@
   <meta name="twitter:description" content="The easiest way to send text to your mobile device from your computer." />
   <meta name="twitter:image:src" content="https://i.imgur.com/4ibpo8Q.png" />
   <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/dark.min.css">
+  <link rel=icon href="https://evanjon.es/static/img/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <style>
+    {{ template "water-dark.min.css" }}
     fieldset { border: 1px #0096bfab solid; border-radius: 6px; margin: 0; margin-bottom: 6px; padding: 10px; }
     legend { font-size: 0.9em; font-weight: 600; }
   </style>
@@ -210,8 +211,8 @@
     </form>
     {{ end }}
   </main>
-  <script src="https://unpkg.com/vanilla-text-mask@5.1.1/dist/vanillaTextMask.js"></script>
   <script>
+    {{ template "mask.min.js" }}
     (function() {
       var phoneMask = ['(', /[1-9]/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
       var elements = document.querySelectorAll("input[name='Phone']");

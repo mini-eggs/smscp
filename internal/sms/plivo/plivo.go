@@ -1,4 +1,4 @@
-package sms
+package plivo
 
 import "github.com/plivo/plivo-go"
 
