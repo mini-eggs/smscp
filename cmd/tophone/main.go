@@ -255,7 +255,7 @@ func latest(c *cli.Context) error {
 		return errors.New("no note availavle; you have not made any?")
 	}
 
-	fmt.Println(response.Note.NoteText)
+	fmt.Println(strings.TrimSpace(response.Note.NoteText))
 	return nil
 }
 
