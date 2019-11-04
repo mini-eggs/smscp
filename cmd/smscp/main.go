@@ -20,7 +20,7 @@ import (
 
 const (
 	// BASE = "http://localhost:3000"
-	BASE         = "https://smscp.evanjon.es"
+	BASE         = "https://smscp.xyz"
 	API_LOGIN    = BASE + "/cli/user/login"
 	API_REGISTER = BASE + "/cli/user/create"
 	API_CREATE   = BASE + "/cli/note/create"
