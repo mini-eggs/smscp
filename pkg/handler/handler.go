@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"tophone.evanjon.es/pkg/builder"
+	"smscp.xyz/pkg/builder"
 )
 
 func H(w http.ResponseWriter, r *http.Request) {

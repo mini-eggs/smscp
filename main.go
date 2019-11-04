@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"tophone.evanjon.es/pkg/builder"
+	"smscp.xyz/pkg/builder"
 )
 
 func main() {

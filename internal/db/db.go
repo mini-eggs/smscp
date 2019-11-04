@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	. "tophone.evanjon.es/internal/common"
+	. "smscp.xyz/internal/common"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -26,8 +26,8 @@ type securityLayer interface {
 }
 
 func DBDefault(conn *gorm.DB, security securityLayer) db {
-	// conn.AutoMigrate(&ToPhoneUser{})
-	// conn.AutoMigrate(&ToPhoneNote{})
+	// conn.AutoMigrate(&SmsCpUser{})
+	// conn.AutoMigrate(&SmsCpNote{})
 	return db{
 		conn,
 		security,
@@ -55,8 +55,8 @@ func DBConnDefault() (*gorm.DB, error) {
 }
 
 func (db db) UserLogin(email, plaintext string) (User, error) {
-	var user ToPhoneUser
-	status := db.conn.Where(&ToPhoneUser{UserEmail: email}).First(&user)
+	var user SmsCpUser
+	status := db.conn.Where(&SmsCpUser{UserEmail: email}).First(&user)
 
 	if status.Error != nil {
 		return nil, status.Error
@@ -85,7 +85,7 @@ func (db db) UserGet(token string) (User, error) {
 		return nil, err
 	}
 
-	var user ToPhoneUser
+	var user SmsCpUser
 	status := db.conn.Where("id = ?", claims["UserID"]).First(&user)
 
 	if status.Error != nil {
@@ -99,7 +99,7 @@ func (db db) UserGet(token string) (User, error) {
 }
 
 func (db db) UserGetByNumber(number string) (User, error) {
-	var user ToPhoneUser
+	var user SmsCpUser
 	status := db.conn.Where("user_phone = ?", number).First(&user)
 	if status.Error != nil {
 		return nil, status.Error
@@ -122,7 +122,7 @@ func (db db) UserCreate(email, plaintext, phone string) (User, error) {
 		return nil, errors.New("failed to create user; password hash not obtained")
 	}
 
-	user := ToPhoneUser{
+	user := SmsCpUser{
 		UserEmail: email,
 		UserPass:  pass,
 		UserPhone: phone,
@@ -147,9 +147,9 @@ func (db db) UserCreate(email, plaintext, phone string) (User, error) {
 }
 
 func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
-	var dbnotes []ToPhoneNote
+	var dbnotes []SmsCpNote
 	status := db.conn.
-		Where(&ToPhoneNote{UserID: user.ID()}).
+		Where(&SmsCpNote{UserID: user.ID()}).
 		Offset(page * count).
 		Limit(count + 1).
 		Order("id DESC").
@@ -173,7 +173,7 @@ func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
 }
 
 func (db db) NoteGetLatest(user User) (Note, error) {
-	var latest ToPhoneNote
+	var latest SmsCpNote
 	status := db.conn.
 		Where("user_id = ?", user.ID()).
 		Order("created_at ASC").
@@ -186,7 +186,7 @@ func (db db) NoteGetLatest(user User) (Note, error) {
 }
 
 func (db db) NoteGetLatestWithTime(user User, t time.Duration) (Note, error) {
-	var latest ToPhoneNote
+	var latest SmsCpNote
 	status := db.conn.
 		Where("user_id = ? AND created_at >= NOW() - INTERVAL ? SECOND", user.ID(), t.Seconds()).
 		Order("created_at ASC").
@@ -199,7 +199,7 @@ func (db db) NoteGetLatestWithTime(user User, t time.Duration) (Note, error) {
 }
 
 func (db db) NoteCreate(user User, text string) (Note, error) {
-	note := ToPhoneNote{
+	note := SmsCpNote{
 		NoteText: text,
 		UserID:   user.ID(),
 		db:       db,
@@ -222,55 +222,55 @@ func (db db) NoteCreate(user User, text string) (Note, error) {
 	return note, nil
 }
 
-// ToPhoneUser class
+// SmsCpUser class
 
-type ToPhoneUser struct {
+type SmsCpUser struct {
 	gorm.Model
 	UserEmail string `gorm:"unique;not null"`
 	UserPass  string
 	UserPhone string
-	UserNotes []ToPhoneNote
+	UserNotes []SmsCpNote
 	token     string
 	err       error
 	db        db
 }
 
-func (ToPhoneUser *ToPhoneUser) Email() string { return ToPhoneUser.UserEmail }
-func (ToPhoneUser *ToPhoneUser) Phone() string { return ToPhoneUser.UserPhone }
-func (ToPhoneUser *ToPhoneUser) ID() uint      { return ToPhoneUser.Model.ID }
-func (ToPhoneUser *ToPhoneUser) Token() string { return ToPhoneUser.token }
+func (SmsCpUser *SmsCpUser) Email() string { return SmsCpUser.UserEmail }
+func (SmsCpUser *SmsCpUser) Phone() string { return SmsCpUser.UserPhone }
+func (SmsCpUser *SmsCpUser) ID() uint      { return SmsCpUser.Model.ID }
+func (SmsCpUser *SmsCpUser) Token() string { return SmsCpUser.token }
 
-func (ToPhoneUser *ToPhoneUser) SetEmail(value string) {
-	ToPhoneUser.UserEmail = value
+func (SmsCpUser *SmsCpUser) SetEmail(value string) {
+	SmsCpUser.UserEmail = value
 }
 
-func (ToPhoneUser *ToPhoneUser) SetPhone(value string) {
-	ToPhoneUser.UserPhone = value
+func (SmsCpUser *SmsCpUser) SetPhone(value string) {
+	SmsCpUser.UserPhone = value
 }
 
-func (ToPhoneUser *ToPhoneUser) SetPass(plaintext string) {
-	pass, err := ToPhoneUser.db.security.HashCreate(plaintext)
+func (SmsCpUser *SmsCpUser) SetPass(plaintext string) {
+	pass, err := SmsCpUser.db.security.HashCreate(plaintext)
 	if err != nil {
-		ToPhoneUser.err = err
+		SmsCpUser.err = err
 		return
 	}
 
-	ToPhoneUser.UserPass = pass
+	SmsCpUser.UserPass = pass
 }
 
-func (ToPhoneUser *ToPhoneUser) Save() error {
-	if ToPhoneUser.err != nil {
-		return ToPhoneUser.err
+func (SmsCpUser *SmsCpUser) Save() error {
+	if SmsCpUser.err != nil {
+		return SmsCpUser.err
 	}
 
-	status := ToPhoneUser.db.conn.Save(&ToPhoneUser)
+	status := SmsCpUser.db.conn.Save(&SmsCpUser)
 
 	return status.Error
 }
 
-// ToPhoneNote class
+// SmsCpNote class
 
-type ToPhoneNote struct {
+type SmsCpNote struct {
 	gorm.Model
 	NoteText  string `sql:"type:text"`
 	NoteShort string `gorm:"-"` /* ignore! */
@@ -279,14 +279,14 @@ type ToPhoneNote struct {
 	db        db
 }
 
-func (ToPhoneNote ToPhoneNote) Short() string {
+func (SmsCpNote SmsCpNote) Short() string {
 	top := 50
-	if len(ToPhoneNote.NoteText) > top {
-		return ToPhoneNote.NoteText[:top] + "..."
+	if len(SmsCpNote.NoteText) > top {
+		return SmsCpNote.NoteText[:top] + "..."
 	}
-	return ToPhoneNote.NoteText
+	return SmsCpNote.NoteText
 }
 
-func (ToPhoneNote ToPhoneNote) Text() string  { return ToPhoneNote.NoteText }
-func (ToPhoneNote ToPhoneNote) ID() uint      { return ToPhoneNote.Model.ID }
-func (ToPhoneNote ToPhoneNote) Token() string { return ToPhoneNote.token }
+func (SmsCpNote SmsCpNote) Text() string  { return SmsCpNote.NoteText }
+func (SmsCpNote SmsCpNote) ID() uint      { return SmsCpNote.Model.ID }
+func (SmsCpNote SmsCpNote) Token() string { return SmsCpNote.token }

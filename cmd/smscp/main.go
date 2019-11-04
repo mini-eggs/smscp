@@ -20,7 +20,7 @@ import (
 
 const (
 	// BASE = "http://localhost:3000"
-	BASE         = "https://tophone.evanjon.es"
+	BASE         = "https://smscp.xyz"
 	API_LOGIN    = BASE + "/cli/user/login"
 	API_REGISTER = BASE + "/cli/user/create"
 	API_CREATE   = BASE + "/cli/note/create"
@@ -96,7 +96,7 @@ func register(c *cli.Context) error {
 		return errors.Wrap(err, "failed to retrieve current user from operating system")
 	}
 
-	err = ioutil.WriteFile(path.Join(usr.HomeDir, ".tophone"), res, 0644)
+	err = ioutil.WriteFile(path.Join(usr.HomeDir, ".smscp"), res, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write config file")
 	}
@@ -153,7 +153,7 @@ func login(c *cli.Context) error {
 		return errors.Wrap(err, "failed to retrieve current user from operating system")
 	}
 
-	err = ioutil.WriteFile(path.Join(usr.HomeDir, ".tophone"), res, 0644)
+	err = ioutil.WriteFile(path.Join(usr.HomeDir, ".smscp"), res, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to write config file")
 	}
@@ -167,7 +167,7 @@ func create(c *cli.Context) error {
 		return errors.Wrap(err, "failed to retrieve current user from operating system")
 	}
 
-	bytes, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".tophone"))
+	bytes, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".smscp"))
 	if err != nil {
 		return errors.New("failed to read local file; please login")
 	}
@@ -213,7 +213,7 @@ func latest(c *cli.Context) error {
 		return errors.Wrap(err, "failed to retrieve current user from operating system")
 	}
 
-	bytes, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".tophone"))
+	bytes, err := ioutil.ReadFile(path.Join(usr.HomeDir, ".smscp"))
 	if err != nil {
 		return errors.New("failed to read local file; please login")
 	}
@@ -261,8 +261,8 @@ func latest(c *cli.Context) error {
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "tophone"
-	app.Usage = "CLI for https://tophone.evanjon.es/"
+	app.Name = "smscp"
+	app.Usage = "CLI for https://smscp.xyz/"
 	app.Version = "0.1.0"
 
 	app.Commands = []cli.Command{

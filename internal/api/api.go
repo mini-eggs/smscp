@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	. "tophone.evanjon.es/internal/common"
+	. "smscp.xyz/internal/common"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

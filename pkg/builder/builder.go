@@ -3,10 +3,10 @@ package builder
 import (
 	"os"
 
-	"tophone.evanjon.es/internal/api"
-	"tophone.evanjon.es/internal/db"
-	"tophone.evanjon.es/internal/security"
-	"tophone.evanjon.es/internal/sms/twilio"
+	"smscp.xyz/internal/api"
+	"smscp.xyz/internal/db"
+	"smscp.xyz/internal/security"
+	"smscp.xyz/internal/sms/twilio"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

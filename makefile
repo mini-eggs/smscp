@@ -8,7 +8,7 @@ deploy:
 
 yolo:
 	cp -r web pkg/handler && \
-	now && now alias tophone.minieggs40.now.sh tophone.evanjon.es && \
+	now && now alias smscp.minieggs40.now.sh smscp.xyz && \
 	rm -rf pkg/handler/web
 
 	
