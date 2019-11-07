@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"smscp.xyz/pkg/builder"
+	"smscp.xyz/pkg/mode"
 )
 
 func H(w http.ResponseWriter, r *http.Request) {
-	server, err := builder.Build()
+	server, err := builder.Build(mode.MODE_PROD)
 	if err != nil {
 		log.Fatal(err)
 		return

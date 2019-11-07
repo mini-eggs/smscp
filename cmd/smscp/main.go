@@ -53,7 +53,7 @@ func register(c *cli.Context) error {
 	}
 	fmt.Println()
 
-	fmt.Printf("Phone number (nine or ten digits): ")
+	fmt.Printf("Phone number (ten or eleven digit, US number): ")
 	phone, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
 		return errors.Wrap(err, "failed to read phone number from standard in")

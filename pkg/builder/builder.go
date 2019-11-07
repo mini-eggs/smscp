@@ -7,6 +7,7 @@ import (
 	"smscp.xyz/internal/db"
 	"smscp.xyz/internal/security"
 	"smscp.xyz/internal/sms/twilio"
+	"smscp.xyz/pkg/mode"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -15,7 +16,7 @@ import (
 
 var databaseConn, databaseErr = db.DBConnDefault()
 
-func Build() (*gin.Engine, error) {
+func Build(m mode.Mode) (*gin.Engine, error) {
 	if databaseErr != nil {
 		return nil, databaseErr
 	}
@@ -23,15 +24,18 @@ func Build() (*gin.Engine, error) {
 	router := gin.Default()
 	router.LoadHTMLGlob("web/html/*")
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
-	router.Use(sessions.Sessions("lasso_sessions", store))
+	router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), store))
 
 	sms := twilio.SMSDefault(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 	security := security.SecurityDefault(os.Getenv("JWT_SECRET"))
 	data := db.DBDefault(databaseConn, security)
+	data.SetMode(m)
 	app := api.AppDefault(data, sms)
 
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
+
+	router.GET("/ping", app.Pong)
 
 	router.POST("/user/login", app.UserLogin)
 	router.POST("/user/create", app.UserCreate)

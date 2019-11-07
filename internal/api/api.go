@@ -1,18 +1,17 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
-	. "smscp.xyz/internal/common"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/pkg/errors"
 	"github.com/ttacon/libphonenumber"
+	. "smscp.xyz/internal/common"
 )
 
 type app struct {
@@ -22,7 +21,7 @@ type app struct {
 
 const (
 	PER_PAGE               = 20
-	KEY_USER_SESSION_TOKEN = iota
+	KEY_USER_SESSION_TOKEN = "KEY_USER_SESSION_TOKEN"
 )
 
 type dataLayer interface {
@@ -223,7 +222,7 @@ func (app app) UserCreate(c *gin.Context) {
 
 	phone, err := libphonenumber.Parse(payload.Phone, "US")
 	if err != nil {
-		app.error(c, err)
+		app.error(c, errors.Wrap(err, "must be US number"))
 		return
 	} else if !libphonenumber.IsValidNumber(phone) {
 		app.error(c, errors.New("invalid phone number; try again"))
@@ -322,7 +321,7 @@ func (app app) UserUpdate(c *gin.Context) {
 	if payload.Phone != "" {
 		phone, err := libphonenumber.Parse(payload.Phone, "US")
 		if err != nil {
-			app.error(c, err)
+			app.error(c, errors.Wrap(err, "must be US number"))
 			return
 		} else if !libphonenumber.IsValidNumber(phone) {
 			app.error(c, errors.New("invalid phone number; try again"))
@@ -421,11 +420,15 @@ func (app app) NoteListJSON(c *gin.Context) {
 	})
 }
 
+func (app app) Pong(c *gin.Context) {
+	c.String(http.StatusOK, "pong")
+}
+
 func (app app) currentUser(c *gin.Context) (User, error) {
 	s := sessions.Default(c)
 	token, ok := s.Get(KEY_USER_SESSION_TOKEN).(string)
 	if !ok {
-		return nil, errors.New("session key type assertion failed")
+		return nil, errors.New("no session available; no user")
 	}
 	return app.currentUserFromToken(token)
 }

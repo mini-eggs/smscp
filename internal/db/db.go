@@ -1,16 +1,16 @@
 package db
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	. "smscp.xyz/internal/common"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"github.com/pkg/errors"
+	. "smscp.xyz/internal/common"
+	"smscp.xyz/pkg/mode"
 )
 
 type db struct {
@@ -26,8 +26,6 @@ type securityLayer interface {
 }
 
 func DBDefault(conn *gorm.DB, security securityLayer) db {
-	// conn.AutoMigrate(&SmsCpUser{})
-	// conn.AutoMigrate(&SmsCpNote{})
 	return db{
 		conn,
 		security,
@@ -44,7 +42,7 @@ func DBConnDefault() (*gorm.DB, error) {
 
 	conn, err := gorm.Open("mysql", connStr)
 	if err != nil {
-		return conn, err
+		return conn, errors.Wrap(err, "failed to connect to database")
 	}
 
 	conn.DB().SetMaxIdleConns(10)
@@ -52,6 +50,20 @@ func DBConnDefault() (*gorm.DB, error) {
 	conn.DB().SetConnMaxLifetime(time.Hour)
 
 	return conn, nil
+}
+
+func (db db) SetMode(m mode.Mode) {
+	//db.conn.AutoMigrate(&SmsCpUser{})
+	//db.conn.AutoMigrate(&SmsCpNote{})
+	switch m {
+	case mode.MODE_TEST:
+		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_test" }
+		return
+	case mode.MODE_DEV:
+		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_dev" }
+	default:
+		return
+	}
 }
 
 func (db db) UserLogin(email, plaintext string) (User, error) {
