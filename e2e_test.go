@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	server, _ = builder.Build(mode.ModeTest)
+	server, _ = builder.Build(mode.Test)
 )
 
 // helpers

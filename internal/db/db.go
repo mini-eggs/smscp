@@ -58,10 +58,10 @@ func (db DB) SetMode(m mode.Mode) {
 	//db.conn.AutoMigrate(&SmsCpUser{})
 	//db.conn.AutoMigrate(&SmsCpNote{})
 	switch m {
-	case mode.ModeTest:
+	case mode.Test:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_test" }
 		return
-	case mode.ModeDev:
+	case mode.Dev:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_dev" }
 	default:
 		return

@@ -9,7 +9,7 @@ import (
 )
 
 func H(w http.ResponseWriter, r *http.Request) {
-	server, err := builder.Build(mode.ModeProd)
+	server, err := builder.Build(mode.Prod)
 	if err != nil {
 		log.Fatal(err)
 		return
