@@ -31,6 +31,22 @@ type config struct {
 	Token string
 }
 
+type hash map[string]string
+
+// helper
+
+func post(dest string, values hash) (*http.Response, error) {
+	next := url.Values{}
+	for key, val := range values {
+		// Remote white spaces, new lines, and windows line endings.
+		val = strings.Trim(strings.Trim(strings.Trim(val, " "), "\n"), "\r\n")
+		next.Add(key, val)
+	}
+	return http.PostForm(dest, next)
+}
+
+// cli commands
+
 func register(c *cli.Context) error {
 	fmt.Printf("Email: ")
 	email, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -62,11 +78,11 @@ func register(c *cli.Context) error {
 
 	/* make http req */
 
-	resp, err := http.PostForm(APIRegister, url.Values{
-		"Email":    {email},
-		"Phone":    {phone},
-		"Password": {string(pass)},
-		"Verify":   {string(verify)},
+	resp, err := post(APIRegister, hash{
+		"Email":    email,
+		"Phone":    phone,
+		"Password": string(pass),
+		"Verify":   string(verify),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create request to remote server")
@@ -121,9 +137,9 @@ func login(c *cli.Context) error {
 
 	/* make http req */
 
-	resp, err := http.PostForm(APILogin, url.Values{
-		"Email":    {email},
-		"Password": {string(pass)},
+	resp, err := post(APILogin, hash{
+		"Email":    email,
+		"Password": string(pass),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create request to remote server")
@@ -185,9 +201,9 @@ func create(c *cli.Context) error {
 		return err
 	}
 
-	resp, err := http.PostForm(APICreate, url.Values{
-		"Token": {cfg.Token},
-		"Text":  {string(text)},
+	resp, err := post(APICreate, hash{
+		"Token": cfg.Token,
+		"Text":  string(text),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to create request to remote server")
@@ -226,7 +242,7 @@ func latest(c *cli.Context) error {
 		return fmt.Errorf("failed to get user token; please login")
 	}
 
-	resp, err := http.PostForm(APILatest, url.Values{"Token": {cfg.Token}})
+	resp, err := post(APILatest, hash{"Token": cfg.Token})
 	if err != nil {
 		return errors.Wrap(err, "failed to create request to remote server")
 	}
