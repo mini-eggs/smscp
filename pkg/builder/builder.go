@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var databaseConn, databaseErr = db.DBConnDefault()
+var databaseConn, databaseErr = db.ConnDefault()
 
 func Build(m mode.Mode) (*gin.Engine, error) {
 	if databaseErr != nil {
@@ -26,9 +26,9 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), store))
 
-	sms := twilio.SMSDefault(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
-	security := security.SecurityDefault(os.Getenv("JWT_SECRET"))
-	data := db.DBDefault(databaseConn, security)
+	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
+	security := security.Default(os.Getenv("JWT_SECRET"))
+	data := db.Default(databaseConn, security)
 	data.SetMode(m)
 	app := api.AppDefault(data, sms)
 

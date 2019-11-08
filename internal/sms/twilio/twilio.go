@@ -9,21 +9,21 @@ import (
 	"github.com/ttacon/libphonenumber"
 )
 
-type sms struct {
+type SMS struct {
 	id, secret, from string
 }
 
-func SMSDefault(id, secret, from string) sms {
-	return sms{id, secret, from}
+func Default(id, secret, from string) SMS {
+	return SMS{id, secret, from}
 }
 
-func (sms sms) Send(to, text string) error {
+func (sms SMS) Send(to, text string) error {
 	twilio := gotwilio.NewTwilioClient(sms.id, sms.secret)
 	_, _, err := twilio.SendMMS(sms.from, to, text, "", "", "")
 	return err
 }
 
-func (sms sms) Hook(c *gin.Context) (number, text string, err error) {
+func (sms SMS) Hook(c *gin.Context) (number, text string, err error) {
 	var payload struct {
 		Body, From, FromCountry string
 	}

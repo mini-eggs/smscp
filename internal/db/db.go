@@ -7,13 +7,15 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
+
+	// for mysql support
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/pkg/errors"
-	. "smscp.xyz/internal/common"
+	"smscp.xyz/internal/common"
 	"smscp.xyz/pkg/mode"
 )
 
-type db struct {
+type DB struct {
 	conn     *gorm.DB
 	security securityLayer
 }
@@ -21,18 +23,18 @@ type db struct {
 type securityLayer interface {
 	HashCreate(pass string) (string, error)
 	HashCompare(pass, hash string) error
-	TokenCreate(val jwt.MapClaims) (string, error)
+	TokenCreate(val jwt.Claims) (string, error)
 	TokenFrom(tokenString string) (jwt.MapClaims, error)
 }
 
-func DBDefault(conn *gorm.DB, security securityLayer) db {
-	return db{
+func Default(conn *gorm.DB, security securityLayer) DB {
+	return DB{
 		conn,
 		security,
 	}
 }
 
-func DBConnDefault() (*gorm.DB, error) {
+func ConnDefault() (*gorm.DB, error) {
 	connStr := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8&parseTime=True&loc=Local",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
@@ -52,21 +54,21 @@ func DBConnDefault() (*gorm.DB, error) {
 	return conn, nil
 }
 
-func (db db) SetMode(m mode.Mode) {
+func (db DB) SetMode(m mode.Mode) {
 	//db.conn.AutoMigrate(&SmsCpUser{})
 	//db.conn.AutoMigrate(&SmsCpNote{})
 	switch m {
-	case mode.MODE_TEST:
+	case mode.ModeTest:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_test" }
 		return
-	case mode.MODE_DEV:
+	case mode.ModeDev:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_dev" }
 	default:
 		return
 	}
 }
 
-func (db db) UserLogin(email, plaintext string) (User, error) {
+func (db DB) UserLogin(email, plaintext string) (common.User, error) {
 	var user SmsCpUser
 	status := db.conn.Where(&SmsCpUser{UserEmail: email}).First(&user)
 
@@ -91,7 +93,7 @@ func (db db) UserLogin(email, plaintext string) (User, error) {
 	return &user, nil
 }
 
-func (db db) UserGet(token string) (User, error) {
+func (db DB) UserGet(token string) (common.User, error) {
 	claims, err := db.security.TokenFrom(token)
 	if err != nil {
 		return nil, err
@@ -110,7 +112,7 @@ func (db db) UserGet(token string) (User, error) {
 	return &user, nil
 }
 
-func (db db) UserGetByNumber(number string) (User, error) {
+func (db DB) UserGetByNumber(number string) (common.User, error) {
 	var user SmsCpUser
 	status := db.conn.Where("user_phone = ?", number).First(&user)
 	if status.Error != nil {
@@ -128,7 +130,7 @@ func (db db) UserGetByNumber(number string) (User, error) {
 	return &user, nil
 }
 
-func (db db) UserCreate(email, plaintext, phone string) (User, error) {
+func (db DB) UserCreate(email, plaintext, phone string) (common.User, error) {
 	pass, err := db.security.HashCreate(plaintext)
 	if err != nil {
 		return nil, errors.New("failed to create user; password hash not obtained")
@@ -158,7 +160,7 @@ func (db db) UserCreate(email, plaintext, phone string) (User, error) {
 	return &user, nil
 }
 
-func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
+func (db DB) NoteGetList(user common.User, page, count int) ([]common.Note, bool, error) {
 	var dbnotes []SmsCpNote
 	status := db.conn.
 		Where(&SmsCpNote{UserID: user.ID()}).
@@ -175,7 +177,7 @@ func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
 		dbnotes = dbnotes[:len(dbnotes)-1] /* all but last */
 	}
 
-	var notes []Note
+	var notes []common.Note
 	for _, note := range dbnotes {
 		note.NoteShort = note.Short() /* special case, bc in templates we can just call method */
 		notes = append(notes, note)
@@ -184,7 +186,7 @@ func (db db) NoteGetList(user User, page, count int) ([]Note, bool, error) {
 	return notes, hasMore, status.Error
 }
 
-func (db db) NoteGetLatest(user User) (Note, error) {
+func (db DB) NoteGetLatest(user common.User) (common.Note, error) {
 	var latest SmsCpNote
 	status := db.conn.
 		Where("user_id = ?", user.ID()).
@@ -197,7 +199,7 @@ func (db db) NoteGetLatest(user User) (Note, error) {
 	return latest, nil
 }
 
-func (db db) NoteGetLatestWithTime(user User, t time.Duration) (Note, error) {
+func (db DB) NoteGetLatestWithTime(user common.User, t time.Duration) (common.Note, error) {
 	var latest SmsCpNote
 	status := db.conn.
 		Where("user_id = ? AND created_at >= NOW() - INTERVAL ? SECOND", user.ID(), t.Seconds()).
@@ -210,7 +212,7 @@ func (db db) NoteGetLatestWithTime(user User, t time.Duration) (Note, error) {
 	return latest, nil
 }
 
-func (db db) NoteCreate(user User, text string) (Note, error) {
+func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 	note := SmsCpNote{
 		NoteText: text,
 		UserID:   user.ID(),
@@ -244,7 +246,7 @@ type SmsCpUser struct {
 	UserNotes []SmsCpNote
 	token     string
 	err       error
-	db        db
+	db        DB
 }
 
 func (SmsCpUser *SmsCpUser) Email() string { return SmsCpUser.UserEmail }
@@ -288,7 +290,7 @@ type SmsCpNote struct {
 	NoteShort string `gorm:"-"` /* ignore! */
 	UserID    uint
 	token     string
-	db        db
+	db        DB
 }
 
 func (SmsCpNote SmsCpNote) Short() string {

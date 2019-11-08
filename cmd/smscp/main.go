@@ -20,11 +20,11 @@ import (
 
 const (
 	// BASE = "http://localhost:3000"
-	BASE         = "https://smscp.xyz"
-	API_LOGIN    = BASE + "/cli/user/login"
-	API_REGISTER = BASE + "/cli/user/create"
-	API_CREATE   = BASE + "/cli/note/create"
-	API_LATEST   = BASE + "/cli/note/latest"
+	BASE        = "https://smscp.xyz"
+	APILogin    = BASE + "/cli/user/login"
+	APIRegister = BASE + "/cli/user/create"
+	APICreate   = BASE + "/cli/note/create"
+	APILatest   = BASE + "/cli/note/latest"
 )
 
 type config struct {
@@ -62,7 +62,7 @@ func register(c *cli.Context) error {
 
 	/* make http req */
 
-	resp, err := http.PostForm(API_REGISTER, url.Values{
+	resp, err := http.PostForm(APIRegister, url.Values{
 		"Email":    {email},
 		"Phone":    {phone},
 		"Password": {string(pass)},
@@ -121,7 +121,7 @@ func login(c *cli.Context) error {
 
 	/* make http req */
 
-	resp, err := http.PostForm(API_LOGIN, url.Values{
+	resp, err := http.PostForm(APILogin, url.Values{
 		"Email":    {email},
 		"Password": {string(pass)},
 	})
@@ -185,7 +185,7 @@ func create(c *cli.Context) error {
 		return err
 	}
 
-	resp, err := http.PostForm(API_CREATE, url.Values{
+	resp, err := http.PostForm(APICreate, url.Values{
 		"Token": {cfg.Token},
 		"Text":  {string(text)},
 	})
@@ -226,7 +226,7 @@ func latest(c *cli.Context) error {
 		return fmt.Errorf("failed to get user token; please login")
 	}
 
-	resp, err := http.PostForm(API_LATEST, url.Values{"Token": {cfg.Token}})
+	resp, err := http.PostForm(APILatest, url.Values{"Token": {cfg.Token}})
 	if err != nil {
 		return errors.Wrap(err, "failed to create request to remote server")
 	}

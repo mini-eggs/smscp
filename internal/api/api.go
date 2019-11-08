@@ -8,31 +8,30 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/pkg/errors"
 	"github.com/ttacon/libphonenumber"
-	. "smscp.xyz/internal/common"
+	"smscp.xyz/internal/common"
 )
 
-type app struct {
+type App struct {
 	data dataLayer
 	sms  smsLayer
 }
 
 const (
-	PER_PAGE               = 20
-	KEY_USER_SESSION_TOKEN = "KEY_USER_SESSION_TOKEN"
+	perPage             = 20
+	sessionKeyUserToken = "USER_TOKEN"
 )
 
 type dataLayer interface {
-	UserGet(token string) (User, error)
-	UserGetByNumber(number string) (User, error)
-	UserLogin(email, pass string) (User, error)
-	UserCreate(email, pass, phone string) (User, error)
-	NoteGetList(user User, page, count int) ([]Note, bool, error)
-	NoteGetLatest(user User) (Note, error)
-	NoteGetLatestWithTime(user User, t time.Duration) (Note, error)
-	NoteCreate(user User, text string) (Note, error)
+	UserGet(token string) (common.User, error)
+	UserGetByNumber(number string) (common.User, error)
+	UserLogin(email, pass string) (common.User, error)
+	UserCreate(email, pass, phone string) (common.User, error)
+	NoteGetList(user common.User, page, count int) ([]common.Note, bool, error)
+	NoteGetLatest(user common.User) (common.Note, error)
+	NoteGetLatestWithTime(user common.User, t time.Duration) (common.Note, error)
+	NoteCreate(user common.User, text string) (common.Note, error)
 }
 
 type smsLayer interface {
@@ -40,14 +39,14 @@ type smsLayer interface {
 	Hook(c *gin.Context) (number, text string, err error)
 }
 
-func AppDefault(data dataLayer, sms smsLayer) app {
-	return app{
+func AppDefault(data dataLayer, sms smsLayer) App {
+	return App{
 		data,
 		sms,
 	}
 }
 
-func (app app) HookSMS(c *gin.Context) {
+func (app App) HookSMS(c *gin.Context) {
 	num, text, err := app.sms.Hook(c)
 	if err != nil {
 		app.error(c, err)
@@ -69,7 +68,7 @@ func (app app) HookSMS(c *gin.Context) {
 	c.String(http.StatusOK, "message received")
 }
 
-func (app app) NoteCreate(c *gin.Context) {
+func (app App) NoteCreate(c *gin.Context) {
 	var payload struct {
 		Text string
 	}
@@ -100,7 +99,7 @@ func (app app) NoteCreate(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
-func (app app) NoteCreateCLI(c *gin.Context) {
+func (app App) NoteCreateCLI(c *gin.Context) {
 	var payload struct {
 		Token, Text string
 	}
@@ -131,7 +130,7 @@ func (app app) NoteCreateCLI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Message": "complete"})
 }
 
-func (app app) NoteLatestCLI(c *gin.Context) {
+func (app App) NoteLatestCLI(c *gin.Context) {
 	var payload struct {
 		Token string
 	}
@@ -157,7 +156,7 @@ func (app app) NoteLatestCLI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Message": "complete", "Note": note})
 }
 
-func (app app) UserLogin(c *gin.Context) {
+func (app App) UserLogin(c *gin.Context) {
 	var payload struct {
 		Email, Password string
 	}
@@ -175,7 +174,7 @@ func (app app) UserLogin(c *gin.Context) {
 	}
 
 	s := sessions.Default(c)
-	s.Set(KEY_USER_SESSION_TOKEN, user.Token())
+	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
 		app.error(c, err)
 		return
@@ -184,7 +183,7 @@ func (app app) UserLogin(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
-func (app app) UserLoginCLI(c *gin.Context) {
+func (app App) UserLoginCLI(c *gin.Context) {
 	var payload struct {
 		Email, Password string
 	}
@@ -204,7 +203,7 @@ func (app app) UserLoginCLI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Token": user.Token()})
 }
 
-func (app app) UserCreate(c *gin.Context) {
+func (app App) UserCreate(c *gin.Context) {
 	var payload struct {
 		Email, Password, Verify, Phone string
 	}
@@ -237,7 +236,7 @@ func (app app) UserCreate(c *gin.Context) {
 	}
 
 	s := sessions.Default(c)
-	s.Set(KEY_USER_SESSION_TOKEN, user.Token())
+	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
 		app.error(c, err)
 		return
@@ -246,7 +245,7 @@ func (app app) UserCreate(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
-func (app app) UserCreateCLI(c *gin.Context) {
+func (app App) UserCreateCLI(c *gin.Context) {
 	var payload struct {
 		Email, Password, Verify, Phone string
 	}
@@ -279,7 +278,7 @@ func (app app) UserCreateCLI(c *gin.Context) {
 	}
 
 	s := sessions.Default(c)
-	s.Set(KEY_USER_SESSION_TOKEN, user.Token())
+	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
 		app.error(c, err)
 		return
@@ -288,7 +287,7 @@ func (app app) UserCreateCLI(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Token": user.Token()})
 }
 
-func (app app) UserUpdate(c *gin.Context) {
+func (app App) UserUpdate(c *gin.Context) {
 	var payload struct {
 		Email, Password, Verify, Phone string
 	}
@@ -337,7 +336,7 @@ func (app app) UserUpdate(c *gin.Context) {
 	}
 
 	s := sessions.Default(c)
-	s.Set(KEY_USER_SESSION_TOKEN, user.Token())
+	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
 		app.error(c, err)
 		return
@@ -346,9 +345,9 @@ func (app app) UserUpdate(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
-func (app app) UserLogout(c *gin.Context) {
+func (app App) UserLogout(c *gin.Context) {
 	s := sessions.Default(c)
-	s.Set(KEY_USER_SESSION_TOKEN, nil)
+	s.Set(sessionKeyUserToken, nil)
 	if err := s.Save(); err != nil {
 		app.error(c, err)
 		return
@@ -357,7 +356,7 @@ func (app app) UserLogout(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
 
-func (app app) Page(c *gin.Context) {
+func (app App) Page(c *gin.Context) {
 	user, err := app.currentUser(c)
 	if err != nil {
 		// Not really an error, just we don't currently have a user stored in
@@ -369,7 +368,7 @@ func (app app) Page(c *gin.Context) {
 	}
 
 	page := 0
-	notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
+	notes, hasMore, err := app.data.NoteGetList(user, page, perPage)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -390,7 +389,7 @@ func (app app) Page(c *gin.Context) {
 	})
 }
 
-func (app app) NoteListJSON(c *gin.Context) {
+func (app App) NoteListJSON(c *gin.Context) {
 	user, err := app.currentUser(c)
 	if err != nil {
 		// Not really an error, just we don't currently have a user stored in
@@ -406,7 +405,7 @@ func (app app) NoteListJSON(c *gin.Context) {
 		return
 	}
 
-	notes, hasMore, err := app.data.NoteGetList(user, page, PER_PAGE)
+	notes, hasMore, err := app.data.NoteGetList(user, page, perPage)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -420,24 +419,24 @@ func (app app) NoteListJSON(c *gin.Context) {
 	})
 }
 
-func (app app) Pong(c *gin.Context) {
+func (app App) Pong(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
 }
 
-func (app app) currentUser(c *gin.Context) (User, error) {
+func (app App) currentUser(c *gin.Context) (common.User, error) {
 	s := sessions.Default(c)
-	token, ok := s.Get(KEY_USER_SESSION_TOKEN).(string)
+	token, ok := s.Get(sessionKeyUserToken).(string)
 	if !ok {
 		return nil, errors.New("no session available; no user")
 	}
 	return app.currentUserFromToken(token)
 }
 
-func (app app) currentUserFromToken(token string) (User, error) {
+func (app App) currentUserFromToken(token string) (common.User, error) {
 	user, err := app.data.UserGet(token)
 	return user, err
 }
 
-func (app app) error(c *gin.Context, err error) {
+func (app App) error(c *gin.Context, err error) {
 	c.String(http.StatusInternalServerError, err.Error())
 }

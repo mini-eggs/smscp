@@ -13,8 +13,7 @@ import (
 )
 
 var (
-	server, _    = builder.Build(mode.MODE_TEST)
-	goodUserData = goodUser()
+	server, _ = builder.Build(mode.ModeTest)
 )
 
 // helpers
@@ -74,6 +73,7 @@ func badUserPhone() url.Values {
 // tests
 
 func TestBasic(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/ping", nil)
 	server.ServeHTTP(w, req)
@@ -82,15 +82,17 @@ func TestBasic(t *testing.T) {
 }
 
 func TestUserCreationGood(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/user/create", nil)
-	req.PostForm = goodUserData
+	req.PostForm = goodUser()
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	server.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 }
 
 func TestUserCreationBadPass(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/user/create", nil)
 	req.PostForm = badUserPass()
@@ -100,6 +102,7 @@ func TestUserCreationBadPass(t *testing.T) {
 }
 
 func TestUserCreationBadPhone(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/user/create", nil)
 	req.PostForm = badUserPhone()
@@ -109,6 +112,7 @@ func TestUserCreationBadPhone(t *testing.T) {
 }
 
 func TestUserUpdateGood(t *testing.T) {
+	t.Parallel()
 	user := goodUser()
 
 	// create user
@@ -146,155 +150,130 @@ func TestUserUpdateGood(t *testing.T) {
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 }
 
-// func TestUserUpdateBadPass(t *testing.T) {
-// 	user := goodUser()
-// 	badUser := badUserPass()
-// 	// create user
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/user/create", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// modify user
-// 	badUser.Del("Email")
-// 	badUser.Set("Email", user.Get("Email"))
-// 	// update user
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/update", nil)
-// 	req.PostForm = badUser
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, "invalid password; not equal", w.Body.String())
-// 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-// 	// logout user
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/logout", nil)
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// login user with bad creds
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/login", nil)
-// 	req.PostForm = badUser
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-// 	// login user with good creds
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/login", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// }
+func TestUserUpdateBad(t *testing.T) {
+	t.Parallel()
 
-// func TestUserUpdateBadPhone(t *testing.T) {
-// 	user := goodUser()
-// 	badUser := badUserPhone()
-// 	// create user
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/user/create", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// modify user
-// 	badUser.Del("Email")
-// 	badUser.Set("Email", user.Get("Email"))
-// 	// update user
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/update", nil)
-// 	req.PostForm = badUser
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	// assert.Equal(t, "invalid password; not equal", w.Body.String())
-// 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-// 	// logout user
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/logout", nil)
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// login user with bad creds
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/login", nil)
-// 	req.PostForm = badUser
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-// 	// login user with good creds
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/login", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// }
+	badUsers := []url.Values{
+		badUserPass(),
+		badUserPhone(),
+	}
 
-func TestUserLoginGood(t *testing.T) {
+	for _, badUser := range badUsers {
+		user := goodUser()
+
+		// create user
+		req, _ := http.NewRequest("POST", "/user/create", nil)
+		req.PostForm = user
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+
+		// modify user
+		badUser.Del("Email")
+		badUser.Set("Email", user.Get("Email"))
+
+		// update user
+		req, _ = http.NewRequest("POST", "/user/update", nil)
+		req.PostForm = badUser
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w = fromSession(w, req)
+		server.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		// logout user
+		req, _ = http.NewRequest("POST", "/user/logout", nil)
+		w = fromSession(w, req)
+		server.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+
+		// login user with bad creds
+		req, _ = http.NewRequest("POST", "/user/login", nil)
+		req.PostForm = badUser
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w = fromSession(w, req)
+		server.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+		// login user with good creds
+		req, _ = http.NewRequest("POST", "/user/login", nil)
+		req.PostForm = user
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+		w = fromSession(w, req)
+		server.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+	}
+}
+
+func TestUserLoginBad(t *testing.T) {
+	t.Parallel()
+	user := goodUser()
+
+	// create user
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/user/login", nil)
-	req.PostForm = goodUserData
+	req, _ := http.NewRequest("POST", "/user/create", nil)
+	req.PostForm = user
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	server.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+
+	// modify user
+	user.Del("Password")
+	user.Add("Password", randomdata.SillyName())
+
+	// login bad user
+	req, _ = http.NewRequest("POST", "/user/login", nil)
+	req.PostForm = user
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	w = fromSession(w, req)
+	server.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestNoteGood(t *testing.T) {
+	t.Parallel()
+	user := goodUser()
+
+	// create user
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/user/create", nil)
+	req.PostForm = user
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	server.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+
+	// create note
+	req, _ = http.NewRequest("POST", "/note/create", nil)
+	req.PostForm = goodNote()
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	w = fromSession(w, req)
 	server.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 }
 
-// func TestUserLoginBad(t *testing.T) {
-// 	user := goodUser()
-// 	// create user
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/user/create", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// modify user
-// 	user.Del("Password")
-// 	user.Add("Password", randomdata.SillyName())
-// 	// login bad user
-// 	w = httptest.NewRecorder()
-// 	req, _ = http.NewRequest("POST", "/user/login", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-// }
+func TestNoteBad(t *testing.T) {
+	t.Parallel()
+	user := goodUser()
 
-// func TestNoteGood(t *testing.T) {
-// 	user := goodUser()
-// 	// create user
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/user/create", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// create note
-// 	req, _ = http.NewRequest("POST", "/note/create", nil)
-// 	req.PostForm = goodNote()
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// }
+	// create user
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/user/create", nil)
+	req.PostForm = user
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	server.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 
-// func TestNoteBad(t *testing.T) {
-// 	user := goodUser()
-// 	// create user
-// 	w := httptest.NewRecorder()
-// 	req, _ := http.NewRequest("POST", "/user/create", nil)
-// 	req.PostForm = user
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// 	// create note
-// 	req, _ = http.NewRequest("POST", "/note/create", nil)
-// 	req.PostForm = badNote()
-// 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-// 	server.ServeHTTP(w, req)
-// 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
-// }
+	// create note
+	req, _ = http.NewRequest("POST", "/note/create", nil)
+	req.PostForm = badNote()
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	w = fromSession(w, req)
+	server.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
+}
 
 func TestNoteNoUser(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/note/create", nil)
 	req.PostForm = badNote()

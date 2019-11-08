@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	server, err := builder.Build(mode.MODE_DEV)
+	server, err := builder.Build(mode.ModeDev)
 	if err != nil {
 		log.Fatal(err)
 		return
