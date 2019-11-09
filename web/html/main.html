@@ -12,20 +12,18 @@
   <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
   <link rel=icon href="https://evanjon.es/static/img/favicon.ico" type="image/x-icon">
 </head>
-<body>
+<body class='bg-gray-100'>
   <style>
-    {{ template "water-dark.min.css" }}
-    fieldset { border: 1px #0096bfab solid; border-radius: 6px; margin: 0; margin-bottom: 6px; padding: 10px; }
-    legend { font-size: 0.9em; font-weight: 600; }
+    {{ template "tailwind.min.css" }}
   </style>
-  <main>
-    <h1>smscp</h1>
+  <main class='max-w-4xl m-auto'>
+    <h1 class='font-sans text-6xl font-black'>smscp</h1>
     {{ if .HasUser }}
     <div>
       <p>If you don't like using websites for something that can be put into a
       command line interface application you're invited to install the command
-      line interface of smscp. To install you must have the <a href="https://golang.org/">Go</a>
-      programming language installed. After installation run:</p>
+      line interface of smscp. To install you must have <a class='text-pink-600' href="https://golang.org/">the Go programming language</a> installed. 
+      After installation run:</p>
       <pre><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
       <p>This will build a binary and place it at <code>$HOME/go/bin/smscp</code>. 
       If you've installed Go correctly this will already be in your path. If not I
@@ -166,14 +164,15 @@
     provided.</p>
     <p>If you don't like using websites for something that can be put into a
     command line interface application you're invited to install the command
-    line interface of smscp. To install you must have the <a href="https://golang.org/">Go</a>
-    programming language installed. After installation run:</p>
+    line interface of smscp. To install you must have <a class='text-pink-600' href="https://golang.org/">the Go programming language</a> installed.
+    After installation run:</p>
     <pre><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
     <p>This will build a binary and place it at <code>$HOME/go/bin/smscp</code>. 
     If you've installed Go correctly this will already be in your path. If not I
     recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>. 
     Run <code>smscp help</code> for a list of options. You may also create
     your account via the command line interface, <code>smscp register</code>.</p>
+
     <form action="/user/create" method="POST">
       <fieldset>
         <legend>create account</legend>
@@ -194,7 +193,87 @@
         </div>
       </fieldset>
     </form>
+
+    <div class='w-full max-w-xs'>
+      <form action='/user/create' 
+            method='POST' 
+            class='bg-white shadow-md pt-6 pb-8 rounded px-8'>
+        <fieldset>
+          <legend class='block text-grey-700 text-xl font-bold mb-4'>
+            create account
+          </legend>
+          <div class='mb-4'>
+            <label class='block text-grey-700 text-sm font-bold mb-2'
+                   for='create-email'>
+              Email
+            </label>
+            <input type='email' 
+                   required 
+                   placeholder='Email' 
+                   id='create-email'
+                   name='Email'
+                   class='shadow appearance-none border rounded w-full py-2 px-3
+                   text-grey-700 leading-tight focus:outline-none
+                   focus:shadow-outline text-md' />
+          </div>
+          <div class='mb-4'>
+            <label class='block text-grey-700 text-sm font-bold mb-2'
+                   for='create-password'>
+              Password
+            </label>
+            <input type='password' 
+                   required 
+                   placeholder='Password'
+                   name='Password'
+                   id='create-password'
+                   class='shadow appearance-none border rounded w-full py-2 px-3
+                   text-grey-700 leading-tight focus:outline-none
+                   focus:shadow-outline text-md'/>
+          </div>
+          <div class='mb-4'>
+            <label class='block text-grey-700 text-sm font-bold mb-2'
+                   for='create-verify'>
+              Verify Password
+            </label>
+            <input type='password'  
+                   required 
+                   placeholder='Verify Password'
+                   name='Verify'
+                   id='create-verify'
+                   class='shadow appearance-none border rounded w-full py-2 px-3
+                   text-grey-700 leading-tight focus:outline-none
+                   focus:shadow-outline text-md'/>
+          </div>
+          <div class='mb-4'>
+            <label class='block text-grey-700 text-sm font-bold mb-2'
+                   for='create-phone'>
+              Phone Number
+            </label>
+            <input type='phone' 
+                   required 
+                   placeholder='Phone Number'
+                   name='Phone'
+                   id='create-phone'
+                   class='shadow appearance-none border rounded w-full py-2 px-3
+                   text-grey-700 leading-tight focus:outline-none
+                   focus:shadow-outline text-md'/>
+          </div>
+          <div class=''>
+            <div class="flex items-center justify-between">
+              <input class="bg-blue-500 hover:bg-blue-700 text-white
+                     font-bold py-2 px-4 rounded
+                     focus:outline-none focus:shadow-outline text-md"
+                     value='create account'
+                     type="submit"/>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+
+
     <br/>
+
     <form action="/user/login" method="POST">
       <fieldset>
         <legend>login</legend>
