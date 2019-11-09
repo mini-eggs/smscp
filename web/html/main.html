@@ -16,8 +16,36 @@
   <style>
     {{ template "tailwind.min.css" }}
   </style>
+  <div class='flex bg-blue-500'>
+    <nav class="max-w-4xl m-auto flex flex-auto items-center justify-between flex-wrap py-6">
+      <div class="flex items-center flex-shrink-0 text-white mr-6">
+        <span class="font-semibold text-xl tracking-tight">
+          smscp
+        </span>
+      </div>
+      <div class="block lg:hidden">
+        <button class="flex items-center px-3 py-2 border rounded text-teal-200 border-teal-400 hover:text-white hover:border-white">
+          <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+        </button>
+      </div>
+      <div class="w-full block flex-grow lg:flex lg:items-center lg:w-auto">
+        <div class="text-sm lg:flex-grow">
+          <a href="/" class="block mt-4 lg:inline-block lg:mt-0 text-teal-200 hover:text-white mr-4">
+            Home
+          </a>
+        </div>
+        <div>
+          <a href="#register" class="inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-teal-500 hover:bg-white mt-4 lg:mt-0">
+            Register
+          </a>
+          <a href="#login" class="ml-2 inline-block text-sm px-4 py-2 leading-none border rounded text-white border-white hover:border-transparent hover:text-teal-500 hover:bg-white mt-4 lg:mt-0">
+            Login
+          </a>
+        </div>
+      </div>
+    </nav>
+  </div>
   <main class='max-w-4xl m-auto'>
-    <h1 class='font-sans text-6xl font-black'>smscp</h1>
     {{ if .HasUser }}
     <div>
       <p>If you don't like using websites for something that can be put into a
@@ -157,8 +185,85 @@
       {{ end }}
     </div>
     {{ else }}
-    <p>The <strong>easiest</strong> way to copy text to and from your cell phone
-    and computing machines.</p>
+
+    <article class='py-8'>
+      <h1 class='text-6xl font-black text-gray-700'>
+        smscp
+      </h1> 
+      <h2 class="text-2xl mt-0 mb-4 text-gray-600">
+        The <strong class='font-block text-gray-700'>easiest</strong> way to copy text to &
+        from your phone and computer.
+      </h2> 
+      <hr class="my-8 border-b-2 border-gray-200">
+
+      <h3 class='text-2xl font-bold text-gray-700 mb-2'>
+        What is this?
+      </h3> 
+      <p class='text-base mb-4'>
+        This is a tool to move text snippets from your computer to
+        your phone - or your phone to your computer - or even computer
+        to computer. <strong class='font-black text-gray-700'>smscp</strong> exists as a user friendly website and also as
+        a command line interface program for power users (if you don't know what
+        a command line interface program is ignore this part!).
+      </p>
+
+      <h3 class='text-2xl font-bold text-gray-700 mb-2'>
+        Why not just email myself?
+      </h3> 
+      <p class='text-base mb-4'>
+        Well, you can! I did it for years myself. Honestly, I found it annoying.
+        My phone's email clients always took way too long to load. 
+        <strong class='font-black text-gray-700'>smscp</strong> is near instantaneous.
+      </p>
+
+      <h3 class='text-2xl font-bold text-gray-700 mb-2'>
+        I'm not trusting any random website with my phone number.
+      </h3> 
+      <p class='text-base mb-4'>
+        Smart user you are. Just the user I want. All code for 
+        <a class='text-pink-600' href='/'>smscp</a>
+        is available free of charge. 
+        <a class='text-pink-600' href="https://github.com/mini-eggs/smscp">I invite you to inspect and audit.</a> 
+        Please note, 
+        <a class='text-pink-600' href='/'>smscp</a>
+        is licensed under the GNU Affero General Public License v3.0. If you
+        fork your results must be made available under the same license.
+      </p>
+
+      <h3 class='text-2xl font-bold text-gray-700 mb-2'>
+        Okay, I'm in. What now?
+      </h3> 
+      <p class='text-base mb-4'>
+        Visit the <a id='register-link' class='text-pink-600' href='#register'>registration form</a> below and fill in a email, 
+        password, and phone number. After your registration is complete you'll
+        be navigated to a new homepage with a form to create a "note" these
+        "notes" are the text you wish to copy between your devices. Try it out!
+        Should be speedy (one to ten seconds to reach your device depending on
+        carrier). After your test note has been received I recommend adding this
+        number to your contacts as <strong class='font-black text-gray-700'>smscp</strong>.
+        You can text this number at any time to create a "note" that can be
+        received on your computer. Just log back into the <strong class='font-black text-gray-700'>smscp</strong> 
+        website to see and copy it.
+      </p>
+
+      <h3 class='text-2xl font-bold text-gray-700 mb-2'>
+        I am the power user. 
+      </h3> 
+      <p class='text-base mb-4'>
+        Oh, well, ahem. Right this way... You can find binaries for
+        <a class='text-pink-600' href='/dl/win/smscp.exe'>Windows/x86_64</a>,
+        <a class='text-pink-600' href='/dl/win/smscp'>MacOS/x86_64</a>,
+        <a class='text-pink-600' href='/dl/win/smscp'>Linux/x86_64</a> 
+        here. You can also build from source if you have 
+        <a class='text-pink-600' href='https://golang.org/'>the Go programming language</a> 
+        installed.
+        <pre class='bg-white py-2 px-4 border rounded shadow font-mono'><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
+      </p>
+
+    </article>
+    </article>
+
+
     <p>Start by creating an account (or signing into your existing account) then
     creating a "note" - these notes are immediately sent to the number you've
     provided.</p>
@@ -173,125 +278,139 @@
     Run <code>smscp help</code> for a list of options. You may also create
     your account via the command line interface, <code>smscp register</code>.</p>
 
-    <form action="/user/create" method="POST">
-      <fieldset>
-        <legend>create account</legend>
-        <div>
-          <input type="email" name="Email" placeholder="email" autofocus required />
-        </div>
-        <div>
-          <input type="password" name="Password" placeholder="password" required />
-        </div>
-        <div>
-          <input type="password" name="Verify" placeholder="verify" required />
-        </div>
-        <div>
-          <input type="phone" name="Phone" placeholder="phone number" required>
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
-      </fieldset>
-    </form>
-
-    <div class='w-full max-w-xs'>
-      <form action='/user/create' 
-            method='POST' 
-            class='bg-white shadow-md pt-6 pb-8 rounded px-8'>
-        <fieldset>
-          <legend class='block text-grey-700 text-xl font-bold mb-4'>
-            create account
-          </legend>
-          <div class='mb-4'>
-            <label class='block text-grey-700 text-sm font-bold mb-2'
-                   for='create-email'>
-              Email
-            </label>
-            <input type='email' 
-                   required 
-                   placeholder='Email' 
-                   id='create-email'
-                   name='Email'
-                   class='shadow appearance-none border rounded w-full py-2 px-3
-                   text-grey-700 leading-tight focus:outline-none
-                   focus:shadow-outline text-md' />
-          </div>
-          <div class='mb-4'>
-            <label class='block text-grey-700 text-sm font-bold mb-2'
-                   for='create-password'>
-              Password
-            </label>
-            <input type='password' 
-                   required 
-                   placeholder='Password'
-                   name='Password'
-                   id='create-password'
-                   class='shadow appearance-none border rounded w-full py-2 px-3
-                   text-grey-700 leading-tight focus:outline-none
-                   focus:shadow-outline text-md'/>
-          </div>
-          <div class='mb-4'>
-            <label class='block text-grey-700 text-sm font-bold mb-2'
-                   for='create-verify'>
-              Verify Password
-            </label>
-            <input type='password'  
-                   required 
-                   placeholder='Verify Password'
-                   name='Verify'
-                   id='create-verify'
-                   class='shadow appearance-none border rounded w-full py-2 px-3
-                   text-grey-700 leading-tight focus:outline-none
-                   focus:shadow-outline text-md'/>
-          </div>
-          <div class='mb-4'>
-            <label class='block text-grey-700 text-sm font-bold mb-2'
-                   for='create-phone'>
-              Phone Number
-            </label>
-            <input type='phone' 
-                   required 
-                   placeholder='Phone Number'
-                   name='Phone'
-                   id='create-phone'
-                   class='shadow appearance-none border rounded w-full py-2 px-3
-                   text-grey-700 leading-tight focus:outline-none
-                   focus:shadow-outline text-md'/>
-          </div>
-          <div class=''>
-            <div class="flex items-center justify-between">
-              <input class="bg-blue-500 hover:bg-blue-700 text-white
-                     font-bold py-2 px-4 rounded
-                     focus:outline-none focus:shadow-outline text-md"
-                     value='create account'
-                     type="submit"/>
+    <div class='flex flex-row -mx-4 my-8'>
+      <div class='w-full mx-4'>
+        <form action='/user/create' 
+              id='register'
+              method='POST' 
+              class='w-full bg-white shadow-md pt-6 pb-8 rounded px-8'>
+          <fieldset>
+            <legend class='block text-grey-700 text-xl font-bold mb-4'>
+              Register
+            </legend>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-email'>
+                Email
+              </label>
+              <input type='email' 
+                     required 
+                     placeholder='Email' 
+                     id='create-email'
+                     name='Email'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md' />
             </div>
-          </div>
-        </fieldset>
-      </form>
-    </div>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-password'>
+                Password
+              </label>
+              <input type='password' 
+                     required 
+                     placeholder='Password'
+                     name='Password'
+                     id='create-password'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md'/>
+            </div>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-verify'>
+                Verify Password
+              </label>
+              <input type='password'  
+                     required 
+                     placeholder='Verify Password'
+                     name='Verify'
+                     id='create-verify'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md'/>
+            </div>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-phone'>
+                Phone Number
+              </label>
+              <input type='phone' 
+                     required 
+                     placeholder='Phone Number'
+                     name='Phone'
+                     id='create-phone'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md'/>
+            </div>
+            <div class=''>
+              <div class="flex items-center justify-between">
+                <input class="bg-blue-500 hover:bg-blue-700 text-white
+                       font-bold py-2 px-4 rounded
+                       focus:outline-none focus:shadow-outline text-md"
+                       value='Register'
+                       type="submit"/>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+      <div class='w-full h-full mx-4'>
+        <form action='/user/login' 
+              id='login'
+              method='POST' 
+              class='w-full h-full bg-white shadow-md pt-6 pb-8 rounded px-8'>
+          <fieldset>
+            <legend class='block text-grey-700 text-xl font-bold mb-4'>
+              Login
+            </legend>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-email'>
+                Email
+              </label>
+              <input type='email' 
+                     required 
+                     placeholder='Email' 
+                     id='create-email'
+                     name='Email'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md' />
+            </div>
+            <div class='mb-4'>
+              <label class='block text-grey-700 text-sm font-bold mb-2'
+                     for='create-password'>
+                Password
+              </label>
+              <input type='password' 
+                     required 
+                     placeholder='Password'
+                     name='Password'
+                     id='create-password'
+                     class='shadow appearance-none border rounded w-full py-2 px-3
+                     text-grey-700 leading-tight focus:outline-none
+                     focus:shadow-outline text-md'/>
+            </div>
+            <div class=''>
+              <div class="flex items-center justify-between">
+                <input class="bg-blue-500 hover:bg-blue-700 text-white
+                       font-bold py-2 px-4 rounded
+                       focus:outline-none focus:shadow-outline text-md"
+                       value='Login'
+                       type="submit"/>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+      </div>
 
-
-    <br/>
-
-    <form action="/user/login" method="POST">
-      <fieldset>
-        <legend>login</legend>
-        <div>
-          <input type="email" name="Email" placeholder="email" />
-        </div>
-        <div>
-          <input type="password" name="Password" placeholder="password" />
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
-      </fieldset>
-    </form>
     {{ end }}
   </main>
   <script>
     {{ template "mask.min.js" }}
+    // phone input
     (function() {
       var phoneMask = ['(', /[1-9]/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
       var elements = document.querySelectorAll("input[name='Phone']");
@@ -300,6 +419,51 @@
           inputElement: elements[e],
           mask: phoneMask
         });
+      }
+    })();
+    // register and login buttons
+    (function() {
+      withEvents(
+        document.getElementById('login'),
+        document.querySelector('a[href=\'#login\'')
+      );
+      
+      withEvents(
+        document.getElementById('register'),
+        document.querySelector('a[href=\'#register\'')
+      );
+
+      withEvents(
+        document.getElementById('register'),
+        document.getElementById('register-link')
+      );
+
+      function withEvents(el, btn) {
+        console.log({el,btn})
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+
+          unHighlight();
+
+          el.classList.add('shadow-outline');
+          el.querySelector('input').focus(); // focus first input
+
+          el.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+
+          document.body.addEventListener('click', function() {
+            unHighlight();
+          });
+
+          function unHighlight() {
+            var elements = document.querySelectorAll('.shadow-outline');
+            for(var e = 0; e < elements.length; e++) {
+              elements[e].classList.remove('shadow-outline');
+            }
+          }
+        })
       }
     })();
   </script>
