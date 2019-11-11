@@ -3,7 +3,7 @@ dev:
 
 deploy: cli
 	cp -r web pkg/handler && \
-	now && \
+	now && now alias smscp.minieggs40.now.sh beta.smscp.xyz && \
 	rm -rf pkg/handler/web
 
 push: 

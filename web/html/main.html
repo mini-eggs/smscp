@@ -22,7 +22,7 @@
       max-height: 700px;
     }
 
-    header > i {
+    header > span > i {
       width: 0; 
       height: 0; 
       border-top: 100px solid transparent;
@@ -44,6 +44,10 @@
       cursor: pointer;
     }
 
+    video {
+      background-size: cover;
+    }
+
     pre {
       overflow: auto;
       -webkit-overflow-scrolling: touch; 
@@ -51,13 +55,16 @@
 
   </style>
 
-  <header class='relative'>
+  <header class='relative bg-blue-900'>
 
-    <i class='z-20 absolute bottom-0'></i>
+    <span class='overflow-hidden z-20 absolute top-0 w-full h-full'>
+      <i class='absolute bottom-0 w-full'></i>
+    </span>
 
     <div class='overflow-hidden absolute top-0 left-0 h-full w-full'>
       <video class='absolute top-0 left-0 h-full w-full object-cover z-0' 
-             autoplay loop playsinline muted>
+             autoplay loop playsinline muted
+             poster="/static/image/poster-min.png">
         <source src="/static/video/hero-min.mp4" type="video/mp4">
       </video>
     </div>
@@ -69,8 +76,7 @@
         <div class='mx-5 lg:mx-0'>
 
           {{ if .HasUser }}
-          <h3 class='text-white font-black text-3xl mt-10 sm:mt-20 md:-mt-20'>Welcome back</h3>
-          <hr class="my-5 border-b-2 shadow rounded max-w-xs opacity-25">
+          <h3 class='text-white font-black text-4xl mt-10 sm:mt-20 md:-mt-20 mb-5'>Welcome back</h3>
 
           <a href='#create'>
             <button class="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2
@@ -88,8 +94,7 @@
           <a href='#login'>
           </a>
           {{ else }}
-          <h3 class='text-white font-black text-3xl mt-10 sm:mt-20 md:-mt-20'>Get started</h3>
-          <hr class="my-5 border-b-2 shadow rounded max-w-xs opacity-25">
+          <h3 class='text-white font-black text-4xl mt-10 sm:mt-20 md:-mt-20 mb-5'>Get started</h3>
           <a href='#register'>
             <button class="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2
                            px-4 rounded hover:shadow">
@@ -502,13 +507,13 @@
               </legend>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-email'>
+                       for='register-email'>
                   Email
                 </label>
                 <input type='email' 
                        required 
                        placeholder='Email' 
-                       id='create-email'
+                       id='register-email'
                        name='Email'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
@@ -516,42 +521,42 @@
               </div>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-password'>
+                       for='register-password'>
                   Password
                 </label>
                 <input type='password' 
                        required 
                        placeholder='Password'
                        name='Password'
-                       id='create-password'
+                       id='register-password'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
                        focus:shadow-outline text-md'/>
               </div>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-verify'>
+                       for='register-verify'>
                   Verify Password
                 </label>
                 <input type='password'  
                        required 
                        placeholder='Verify Password'
                        name='Verify'
-                       id='create-verify'
+                       id='register-verify'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
                        focus:shadow-outline text-md'/>
               </div>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-phone'>
+                       for='register-phone'>
                   Phone Number
                 </label>
                 <input type='phone' 
                        required 
                        placeholder='Phone Number'
                        name='Phone'
-                       id='create-phone'
+                       id='register-phone'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
                        focus:shadow-outline text-md'/>
@@ -582,13 +587,13 @@
               </legend>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-email'>
+                       for='login-email'>
                   Email
                 </label>
                 <input type='email' 
                        required 
                        placeholder='Email' 
-                       id='create-email'
+                       id='login-email'
                        name='Email'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
@@ -596,14 +601,14 @@
               </div>
               <div class='mb-5'>
                 <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='create-password'>
+                       for='login-password'>
                   Password
                 </label>
                 <input type='password' 
                        required 
                        placeholder='Password'
                        name='Password'
-                       id='create-password'
+                       id='login-password'
                        class='shadow appearance-none border rounded w-full py-2 px-3
                        text-grey-700 leading-tight focus:outline-none
                        focus:shadow-outline text-md'/>
