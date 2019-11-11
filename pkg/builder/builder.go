@@ -23,6 +23,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 
 	router := gin.Default()
 	router.LoadHTMLGlob("web/html/*")
+	router.Static("/static", "web/static/")
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), store))
 
