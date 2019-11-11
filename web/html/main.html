@@ -12,208 +12,673 @@
   <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
   <link rel=icon href="https://evanjon.es/static/img/favicon.ico" type="image/x-icon">
 </head>
-<body>
+<body class='bg-gray-100'>
   <style>
-    {{ template "water-dark.min.css" }}
-    fieldset { border: 1px #0096bfab solid; border-radius: 6px; margin: 0; margin-bottom: 6px; padding: 10px; }
-    legend { font-size: 0.9em; font-weight: 600; }
-    #notes > details > p { white-space: pre-wrap; }
+    {{ template "tailwind.min.css" }}
+
+    header {
+      min-height: 500px;
+      height: 50vh;
+      max-height: 700px;
+    }
+
+    header > span > i {
+      width: 0; 
+      height: 0; 
+      border-top: 100px solid transparent;
+      border-right: 100vw solid #f7fafc;
+    }
+
+    header > div {
+      background: linear-gradient(90deg,#51cefc,rgba(32,159,255,0));
+    }
+
+    @media (min-width: 768px) { 
+      header #tagline {
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+
+    button, input[type='submit'] {
+      cursor: pointer;
+    }
+
+    video {
+      background-size: cover;
+    }
+
+    pre {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch; 
+    }
+
   </style>
-  <main>
-    <h1>smscp</h1>
-    {{ if .HasUser }}
-    <div>
-      <p>If you don't like using websites for something that can be put into a
-      command line interface application you're invited to install the command
-      line interface of smscp. To install you must have the <a href="https://golang.org/">Go</a>
-      programming language installed. After installation run:</p>
-      <pre><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
-      <p>This will build a binary and place it at <code>$HOME/go/bin/smscp</code>. 
-      If you've installed Go correctly this will already be in your path. If not I
-      recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>. 
-      Run <code>smscp help</code> for a list of options.</p>
-      {{ if .Latest }}
-      <form id='latest-form' action="/placeholder">
-        <fieldset>
-          <legend>latest note</legend>
-          <div>
-            <input type="text" name="Text" placeholder="text" value='{{ .Latest.Short }}' disabled/>
-          </div>
-          <div>
-            <input type="submit" value="copy to clipboard"/>
-          </div>
-        </fieldset>
-      </form>
-      <script>
-        (function() {
-          var form = document.getElementById('latest-form');
-          form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var el = document.createElement('textarea');
-            el.value = '{{ .Latest.Text }}';
-            el.setAttribute('readonly', '');
-            el.style = {position: 'absolute', left: '-9999px'};
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-          });
-        })();
-      </script>
-      <br/>
-      {{ end }}
-      <form action="/note/create" method="POST">
-        <fieldset>
-          <legend>create note</legend>
-          <div>
-            <input type="text" name="Text" placeholder="text" autofocus />
-          </div>
-          <div>
-            <input type="submit" value="go"/>
-          </div>
-        </fieldset>
-      </form>
-      <br/>
-      <form action="/user/logout" method="POST">
-        <fieldset>
-          <legend>logout</legend>
-          <div>
-            <input type="submit" value="logout"/>
-          </div>
-        </fieldset>
-      </form>
-      <br/>
-      <form action="/user/update" method="POST">
-        <fieldset>
-          <legend>update account</legend>
-          <div>
-            <input type="email" name="Email" placeholder="email" />
-          </div>
-          <div>
-            <input type="password" name="Password" placeholder="password" />
-          </div>
-          <div>
-            <input type="password" name="Verify" placeholder="verify" />
-          </div>
-          <div>
-            <input type="text" name="Phone" placeholder="phone number">
-          </div>
-          <div>
-            <input type="submit" value="go"/>
-          </div>
-        </fieldset>
-      </form>
-      {{ if .Notes }}
-      <br/>
-      <form id='latest-form' action="/placeholder">
-        <fieldset>
-          <legend>notes</legend>
-          <div id="notes">
-            {{ range .Notes }}
-            <details>
-              <summary>{{ .Short }}</summary>
-              <p>{{ .Text }}</p>
-            </details>
-            {{ end }}
-          </div>
-          {{ if .NotesHasMore }}
-          <br/>
-          <button id="more">load more</button>
-          <script>
-            (function() {
-              let page = 0;
-              let container = document.getElementById("notes");
-              let btn = document.getElementById("more");
-              btn.addEventListener("click", async function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                btn.setAttribute("disabled", true);
-                btn.textContent = "loading";
-                try {
-                  let req = await fetch(`/note/list/${++page}`)
-                  let res = await req.json()
-                  btn.removeAttribute("disabled");
-                  btn.textContent = "load more";
-                  if(!res.NotesHasMore) {
-                    btn.parentElement.removeChild(btn);
-                  }
-                  for(let note of res.Notes) {
-                    let details = document.createElement("details");
-                    let summary = document.createElement("summary");
-                    summary.textContent = note.NoteShort;
-                    details.appendChild(summary)
-                    let p = document.createElement("p");
-                    p.textContent = note.NoteText;
-                    details.appendChild(p)
-                    container.appendChild(details);
-                  }
-                }
-                catch(e) {
-                  btn.textContent = e.toString();
-                }
-              });
-            })();
-          </script>
+
+  <header class='relative bg-blue-900'>
+
+    <span class='overflow-hidden z-20 absolute top-0 w-full h-full'>
+      <i class='absolute bottom-0 w-full'></i>
+    </span>
+
+    <div class='overflow-hidden absolute top-0 left-0 h-full w-full'>
+      <video class='absolute top-0 left-0 h-full w-full object-cover z-0' 
+             autoplay loop playsinline muted
+             poster="/static/image/poster-min.png">
+        <source src="/static/video/hero-min.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <div class='z-10 absolute top-0 left-0 h-full w-full'></div>
+
+    <span id='tagline' class='z-30 absolute left-0 w-full'>
+      <div class='max-w-4xl mx-auto'>
+        <div class='mx-5 lg:mx-0'>
+
+          {{ if .HasUser }}
+          <h3 class='text-white font-black text-4xl mt-10 sm:mt-20 md:-mt-20 mb-5'>Welcome back</h3>
+
+          <a href='#create'>
+            <button class="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2
+                           px-4 rounded hover:shadow">
+              Create
+            </button>
+          </a>
+
+          <form class='inline' action="/user/logout" method="POST">
+            <button class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2
+                           px-4 rounded hover:shadow ml-3">
+              Logout
+            </button>
+          </form>
+          <a href='#login'>
+          </a>
+          {{ else }}
+          <h3 class='text-white font-black text-4xl mt-10 sm:mt-20 md:-mt-20 mb-5'>Get started</h3>
+          <a href='#register'>
+            <button class="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2
+                           px-4 rounded hover:shadow">
+              Register
+            </button>
+          </a>
+          <a href='#login'>
+            <button class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2
+                           px-4 rounded hover:shadow ml-3">
+              Login
+            </button>
+          </a>
           {{ end }}
-        </fieldset>
-      </form>
+
+        </div>
+      </div>
+    </span>
+
+    <span class='z-30 absolute bottom-0 left-0 w-full'>
+      <div class='mx-5 lg:mx-0 -mb-5'>
+        <div class='bg-white shadow-xl rounded max-w-4xl mx-auto p-5 pt-0'>
+          <h1 class='text-6xl font-black text-gray-700'>
+            smscp
+          </h1> 
+          <h2 class="text-2xl text-gray-600">
+            The <strong class='font-block text-gray-700'>easiest</strong> way to copy text to &
+            from your phone and computer.
+          </h2> 
+        </div>
+      </div>
+    </span>
+
+  </header>
+
+
+
+  <main class='max-w-4xl m-auto mb-20'>
+    <div class='mx-5'>
+      {{ if .HasUser }}
+      <div>
+
+        {{ if .Latest }}
+        <div class='block md:flex flex-row md:-mx-5 mt-20'>
+          <div class='w-full md:mx-5'>
+            <form action='/placeholder' 
+                  id='latest-form'
+                  method='POST' 
+                  class='w-full h-full bg-white shadow-md pt-6 pb-10 rounded px-10'>
+              <fieldset>
+                <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                  Copy the most recently created note to your clipboard
+                </legend>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='note-text'>
+                    Latest note
+                  </label>
+                  <input type='text' 
+                         required 
+                         placeholder='Text' 
+                         id='note-text'
+                         name='Text'
+                         value='{{ .Latest.Short }}'
+                         disabled
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md' />
+                </div>
+                <div>
+                  <div class="flex items-center justify-between">
+                    <input class="bg-blue-500 hover:bg-blue-700 text-white
+                           font-bold py-2 px-4 rounded shadow 
+                           focus:outline-none focus:shadow-outline text-md"
+                           value='Copy to clipboard'
+                           type="submit"/>
+                  </div>
+                </div>
+              </fieldset>
+            </form>
+          </div>
+          </div>
+        </div>
+        <script>
+          (function() {
+            var form = document.getElementById('latest-form');
+            form.addEventListener('submit', copy)
+            function copy(event) {
+              event.preventDefault();
+              var el = document.createElement('textarea');
+              el.value = '{{ .Latest.Text }}';
+              el.setAttribute('readonly', '');
+              el.style = {position: 'absolute', left: '-9999px'};
+              document.body.appendChild(el);
+              el.select();
+              document.execCommand('copy');
+              document.body.removeChild(el);
+            }
+          })();
+        </script>
+        <hr class="my-10 -mb-10 border-b-2 border-gray-200">
+        {{ end }}
+
+        <article class='mt-20'>
+
+          <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+            How do I copy text to my phone?
+          </h3> 
+          <p class='text-base mb-10 text-gray-700'>
+            <a class='text-pink-600' href='#create-link'>Enter the text in the input below and press send!</a> 
+            As easy as that. Within seconds you will receive a sms message with
+            the input provided. Once the sms has been received open your phone,
+            and press/hold the sms message itself, this will prompt a menu
+            from your phone's operating system. You will find a 
+            <strong class='font-black text-gray-700'>copy</strong>
+            item within the menu.
+          </p>
+
+          <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+            How do I copy text to my computer?
+          </h3> 
+          <p class='text-base mb-10 text-gray-700'>
+            Simply reply to a message you've received from 
+						<a class='font-black text-pink-600' href="/">smscp</a>
+            in the past. You will receive a 
+            <strong class='font-black text-gray-700'>message received</strong>
+            reply. After, visit this website and a new box will appear showing
+            <strong class='font-black text-gray-700'>Copy the most recently created note to your clipboard</strong>.
+            Click 
+            <strong class='font-black text-gray-700'>Copy to clipboard</strong>!
+          </p>
+
+          <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+            Give me the CLI already!
+          </h3> 
+          <p class='text-base text-gray-700'>
+            Oh, well, ahem. Right this way... You can find binaries for
+            <a class='text-pink-600' href='/dl/win/smscp.exe'>Windows/x86_64</a>,
+            <a class='text-pink-600' href='/dl/mac/smscp'>MacOS/x86_64</a>,
+            <a class='text-pink-600' href='/dl/lin/smscp'>Linux/x86_64</a> 
+            here. You can also build from source if you have the 
+            <a class='text-pink-600' href='https://golang.org/'>Go programming language</a> 
+            installed.
+            <pre class='bg-white mt-4 py-2 px-4 border rounded shadow font-mono'><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
+          </p>
+
+        </article>
+
+        <hr class="my-10 border-b-2 border-gray-200">
+
+        <div class='block md:flex flex-row md:-mx-5'>
+
+          <div class='w-full mb-10 md:mx-5'>
+
+            <form action='/note/create' 
+                  id='create'
+                  method='POST' 
+                  class='w-full h-full bg-white shadow-md pt-6 pb-10 rounded px-10'>
+              <fieldset>
+                <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                  Send to phone
+                </legend>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='note-text'>
+                    Text
+                  </label>
+                  <input type='text' 
+                         required 
+                         placeholder='Text' 
+                         id='note-text'
+                         name='Text'
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md' />
+                </div>
+                <div>
+                  <div class="flex items-center justify-between">
+                    <input class="bg-blue-500 hover:bg-blue-700 text-white
+                           font-bold py-2 px-4 rounded shadow 
+                           focus:outline-none focus:shadow-outline text-md"
+                           value='Send'
+                           type="submit"/>
+                  </div>
+                </div>
+              </fieldset>
+            </form>
+          </div>
+
+          <div class='w-full mb-10 md:mx-5'>
+
+            <form action='/user/update' 
+                  id='update'
+                  method='POST' 
+                  class='w-full bg-white shadow-md pt-6 pb-10 rounded px-10 mb-10 md:mb-0'>
+              <fieldset>
+                <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                  Update account
+                </legend>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='update-email'>
+                    Email
+                  </label>
+                  <input type='email' 
+                         placeholder='Email' 
+                         id='update-email'
+                         name='Email'
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md' />
+                </div>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='update-password'>
+                    Password
+                  </label>
+                  <input type='password' 
+                         placeholder='Password'
+                         name='Password'
+                         id='update-password'
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md'/>
+                </div>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='update-verify'>
+                    Verify Password
+                  </label>
+                  <input type='password'  
+                         placeholder='Verify Password'
+                         name='Verify'
+                         id='update-verify'
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md'/>
+                </div>
+                <div class='mb-5'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='update-phone'>
+                    Phone Number
+                  </label>
+                  <input type='phone' 
+                         placeholder='Phone Number'
+                         name='Phone'
+                         id='update-phone'
+                         class='shadow appearance-none border rounded w-full py-2 px-3
+                         text-grey-700 leading-tight focus:outline-none
+                         focus:shadow-outline text-md'/>
+                </div>
+                <div class=''>
+                  <div class="flex items-center justify-between">
+                    <input class="bg-blue-500 hover:bg-blue-700 text-white
+                           font-bold py-2 px-4 rounded shadow
+                           focus:outline-none focus:shadow-outline text-md"
+                           value='Update'
+                           type="submit"/>
+                  </div>
+                </div>
+              </fieldset>
+            </form>
+
+          </div>
+
+        </div>
+
+        <!--
+        {{ if .Notes }}
+        <br/>
+        <form id='latest-form' action="/placeholder">
+          <fieldset>
+            <legend>notes</legend>
+            <div id="notes">
+              {{ range .Notes }}
+              <details>
+                <summary>{{ .Short }}</summary>
+                <p>{{ .Text }}</p>
+              </details>
+              {{ end }}
+            </div>
+            {{ if .NotesHasMore }}
+            <br/>
+            <button id="more">load more</button>
+            <script>
+              (function() {
+                let page = 0;
+                let container = document.getElementById("notes");
+                let btn = document.getElementById("more");
+                btn.addEventListener("click", async function(event) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  btn.setAttribute("disabled", true);
+                  btn.textContent = "loading";
+                  try {
+                    let req = await fetch(`/note/list/${++page}`)
+                    let res = await req.json()
+                    btn.removeAttribute("disabled");
+                    btn.textContent = "load more";
+                    if(!res.NotesHasMore) {
+                      btn.parentElement.removeChild(btn);
+                    }
+                    for(let note of res.Notes) {
+                      let details = document.createElement("details");
+                      let summary = document.createElement("summary");
+                      summary.textContent = note.NoteShort;
+                      details.appendChild(summary)
+                      let p = document.createElement("p");
+                      p.textContent = note.NoteText;
+                      details.appendChild(p)
+                      container.appendChild(details);
+                    }
+                  }
+                  catch(e) {
+                    btn.textContent = e.toString();
+                  }
+                });
+              })();
+            </script>
+            {{ end }}
+          </fieldset>
+        </form>
+        {{ end }}
+        -->
+
+      </div>
+
+      {{ else }}
+
+
+      <article class='mt-20'>
+
+        <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+          What is this?
+        </h3> 
+        <p class='text-base mb-10 text-gray-700'>
+          This is a tool to move text snippets from your computer to
+          your phone - or your phone to your computer - or even computer
+          to computer. <strong class='font-black text-gray-700'>smscp</strong> exists as a user friendly website and also as
+          a command line interface program for power users (if you don't know what
+          a command line interface program is ignore this part!).
+        </p>
+
+        <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+          Why not just email myself?
+        </h3> 
+        <p class='text-base mb-10 text-gray-700'>
+          Well, you can! I did it for years myself. Honestly, I found it annoying.
+          My phone's email client always took way too long to load. 
+          <strong class='font-black text-gray-700'>smscp</strong> is near instantaneous.
+        </p>
+
+        <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+          I'm not trusting any random website with my phone number.
+        </h3> 
+        <p class='text-base mb-10 text-gray-700'>
+          Smart user you are. Just the user I want. All code for 
+          <strong class='font-black text-gray-700'>smscp</strong>
+          is available free of charge. 
+          <a class='text-pink-600' href="https://github.com/mini-eggs/smscp">I invite you to inspect and audit.</a> 
+          Please note, 
+          <strong class='font-black text-gray-700'>smscp</strong>
+          is licensed under the GNU Affero General Public License v3.0. If you
+          fork your results must be made available under the same license.
+        </p>
+
+        <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+          Okay, I'm in. What now?
+        </h3> 
+        <p class='text-base mb-10 text-gray-700'>
+          Visit the <a id='register-link' class='text-pink-600' href='#register'>registration form</a> below and fill in a email, 
+          password, and phone number. After your registration is complete you'll
+          be navigated to a new homepage with a form to create a "note" these
+          "notes" are the text you wish to copy between your devices. Try it out!
+          Should be speedy (one to ten seconds to reach your device depending on
+          carrier). After your test note has been received I recommend adding this
+          number to your contacts as <strong class='font-black text-gray-700'>smscp</strong>.
+          You can text this number at any time to create a "note" that can be
+          received on your computer. Just log back into the <strong class='font-black text-gray-700'>smscp</strong> 
+          website to see and copy it.
+        </p>
+
+        <h3 class='text-2xl font-bold text-gray-700 mb-5'>
+          I am the power user. 
+        </h3> 
+        <p class='text-base text-gray-700'>
+          Oh, well, ahem. Right this way... You can find binaries for
+          <a class='text-pink-600' href='/dl/win/smscp.exe'>Windows/x86_64</a>,
+          <a class='text-pink-600' href='/dl/mac/smscp'>MacOS/x86_64</a>,
+          <a class='text-pink-600' href='/dl/lin/smscp'>Linux/x86_64</a> 
+          here. You can also build from source if you have the 
+          <a class='text-pink-600' href='https://golang.org/'>Go programming language</a> 
+          installed.
+          <pre class='bg-white mt-4 py-2 px-4 border rounded shadow font-mono'><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
+        </p>
+
+      </article>
+
+      <hr class="my-10 border-b-2 border-gray-200">
+
+      <div class='block md:flex flex-row md:-mx-5'>
+        <div class='w-full mb-10 md:mx-5'>
+
+          <form action='/user/create' 
+                id='register'
+                method='POST' 
+                class='w-full bg-white shadow-md pt-6 pb-10 rounded px-10 mb-10 md:mb-0'>
+            <fieldset>
+              <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                Register
+              </legend>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='register-email'>
+                  Email
+                </label>
+                <input type='email' 
+                       required 
+                       placeholder='Email' 
+                       id='register-email'
+                       name='Email'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md' />
+              </div>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='register-password'>
+                  Password
+                </label>
+                <input type='password' 
+                       required 
+                       placeholder='Password'
+                       name='Password'
+                       id='register-password'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md'/>
+              </div>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='register-verify'>
+                  Verify Password
+                </label>
+                <input type='password'  
+                       required 
+                       placeholder='Verify Password'
+                       name='Verify'
+                       id='register-verify'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md'/>
+              </div>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='register-phone'>
+                  Phone Number
+                </label>
+                <input type='phone' 
+                       required 
+                       placeholder='Phone Number'
+                       name='Phone'
+                       id='register-phone'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md'/>
+              </div>
+              <div class=''>
+                <div class="flex items-center justify-between">
+                  <input class="bg-blue-500 hover:bg-blue-700 text-white
+                         font-bold py-2 px-4 rounded shadow
+                         focus:outline-none focus:shadow-outline text-md"
+                         value='Register'
+                         type="submit"/>
+                </div>
+              </div>
+            </fieldset>
+          </form>
+          
+        </div>
+
+        <div class='w-full mb-10 md:mx-5'>
+
+          <form action='/user/login' 
+                id='login'
+                method='POST' 
+                class='w-full h-full bg-white shadow-md pt-6 pb-10 rounded px-10'>
+            <fieldset>
+              <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                Login
+              </legend>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='login-email'>
+                  Email
+                </label>
+                <input type='email' 
+                       required 
+                       placeholder='Email' 
+                       id='login-email'
+                       name='Email'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md' />
+              </div>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='login-password'>
+                  Password
+                </label>
+                <input type='password' 
+                       required 
+                       placeholder='Password'
+                       name='Password'
+                       id='login-password'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md'/>
+              </div>
+              <div class=''>
+                <div class="flex items-center justify-between">
+                  <input class="bg-blue-500 hover:bg-blue-700 text-white
+                         font-bold py-2 px-4 rounded shadow 
+                         focus:outline-none focus:shadow-outline text-md"
+                         value='Login'
+                         type="submit"/>
+                </div>
+              </div>
+            </fieldset>
+          </form>
+
+        </div>
+
       {{ end }}
     </div>
-    {{ else }}
-    <p>The <strong>easiest</strong> way to copy text to and from your cell phone
-    and computing machines.</p>
-    <p>Start by creating an account (or signing into your existing account) then
-    creating a "note" - these notes are immediately sent to the number you've
-    provided.</p>
-    <p>If you don't like using websites for something that can be put into a
-    command line interface application you're invited to install the command
-    line interface of smscp. To install you must have the <a href="https://golang.org/">Go</a>
-    programming language installed. After installation run:</p>
-    <pre><code>go get github.com/mini-eggs/smscp/cmd/smscp</code></pre>
-    <p>This will build a binary and place it at <code>$HOME/go/bin/smscp</code>. 
-    If you've installed Go correctly this will already be in your path. If not I
-    recommend taking a trip to <a href="https://duckduckgo.com/?q=how+to+gopath&ia=web">DuckDuckGo</a>. 
-    Run <code>smscp help</code> for a list of options. You may also create
-    your account via the command line interface, <code>smscp register</code>.</p>
-    <form action="/user/create" method="POST">
-      <fieldset>
-        <legend>create account</legend>
-        <div>
-          <input type="email" name="Email" placeholder="email" autofocus required />
-        </div>
-        <div>
-          <input type="password" name="Password" placeholder="password" required />
-        </div>
-        <div>
-          <input type="password" name="Verify" placeholder="verify" required />
-        </div>
-        <div>
-          <input type="phone" name="Phone" placeholder="phone number" required>
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
-      </fieldset>
-    </form>
-    <br/>
-    <form action="/user/login" method="POST">
-      <fieldset>
-        <legend>login</legend>
-        <div>
-          <input type="email" name="Email" placeholder="email" />
-        </div>
-        <div>
-          <input type="password" name="Password" placeholder="password" />
-        </div>
-        <div>
-          <input type="submit" value="go"/>
-        </div>
-      </fieldset>
-    </form>
-    {{ end }}
   </main>
+
+  <footer class="bg-gray-700 text-gray-100 px-2 pt-0 pb-2 mt-0">
+		<div class="container mx-auto py-8">
+			<div class="flex flex-wrap mb-2 px-4">
+				<div class="w-full md:w-1/3 text-center md:text-left px-3 mb-2 md:mb-0 pb-3 sm:pb-0">
+					<p class="text-white font-bold text-xl my-3">
+            What is smscp?
+          </p>
+          <p>
+						<a class='font-black text-green-400' href="/">
+              smscp
+            </a>
+            is a free an open source project created by and maintained by 
+						<a class='font-black text-green-400' href="https://twitter.com/minieggs40" rel="noopener">
+              Evan M Jones
+            </a>
+            with the goal of creating the 
+            <strong class='font-block'>easiest</strong>
+            way to copy text to & from your phone and computer.
+          </p>
+				</div>
+				<div class="w-full md:w-1/3 text-center md:text-left px-3 sm:px-1 mb-2 md:mb-0 pb-3 sm:pb-0"></div>
+				<div class="w-full md:w-1/3 text-center md:text-left px-3 sm:px-1 mb-2 md:mb-0 pb-3 sm:pb-0">
+					<p class="text-white font-bold text-xl my-3">
+            In public.
+          </p>
+          <p>
+            Various locations you can find 
+						<a class='font-black text-green-400' href="/">
+              smscp
+            </a>
+            on the internet.
+          </p>
+					<p class="pt-6">
+						<a class="footerlink pr-3" href="https://www.github.com/mini-eggs/smscp" rel="noopener">
+              <svg class="inline fill-current text-brand-ondark w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>GitHub</title>
+                <path d="M10 0a10 10 0 0 0-3.16 19.49c.5.1.68-.22.68-.48l-.01-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.1.39-1.99 1.03-2.69a3.6 3.6 0 0 1 .1-2.64s.84-.27 2.75 1.02a9.58 9.58 0 0 1 5 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.37.2 2.4.1 2.64.64.7 1.03 1.6 1.03 2.69 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85l-.01 2.75c0 .26.18.58.69.48A10 10 0 0 0 10 0"></path>
+              </svg>
+            </a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</footer>
+
   <script>
     {{ template "mask.min.js" }}
+    // phone input
     (function() {
       var phoneMask = ['(', /[1-9]/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
       var elements = document.querySelectorAll("input[name='Phone']");
@@ -224,5 +689,64 @@
         });
       }
     })();
+    // register and login buttons
+    (function() {
+      withEvents(
+        document.getElementById('login'),
+        document.querySelector('a[href=\'#login\'')
+      );
+      
+      withEvents(
+        document.getElementById('register'),
+        document.querySelector('a[href=\'#register\'')
+      );
+
+      withEvents(
+        document.getElementById('create'),
+        document.querySelector('a[href=\'#create\'')
+      );
+
+      withEvents(
+        document.getElementById('create'),
+        document.querySelector('a[href=\'#create-link\'')
+      );
+
+      withEvents(
+        document.getElementById('register'),
+        document.getElementById('register-link')
+      );
+
+      function withEvents(el, btn) {
+        if(!el || !btn) {
+          return 
+        }
+
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+
+          unHighlight();
+
+          el.classList.add('shadow-outline');
+          el.querySelector('input').focus(); // focus first input
+
+          el.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+
+          document.body.addEventListener('click', function() {
+            unHighlight();
+          });
+
+          function unHighlight() {
+            var elements = document.querySelectorAll('.shadow-outline');
+            for(var e = 0; e < elements.length; e++) {
+              elements[e].classList.remove('shadow-outline');
+            }
+          }
+        })
+      }
+    })();
   </script>
 </body>
+

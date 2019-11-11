@@ -1,12 +1,15 @@
 dev:
 	gin 
 
-deploy:
+deploy: cli
 	cp -r web pkg/handler && \
-	now && \
+	now && now alias smscp.minieggs40.now.sh beta.smscp.xyz && \
 	rm -rf pkg/handler/web
 
-yolo:
+push: 
+	now alias smscp.minieggs40.now.sh smscp.xyz
+
+yolo: cli
 	cp -r web pkg/handler && \
 	now && now alias smscp.minieggs40.now.sh smscp.xyz && \
 	rm -rf pkg/handler/web
