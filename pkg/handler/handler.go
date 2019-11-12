@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"smscp.xyz/pkg/builder"
-	"smscp.xyz/pkg/mode"
+	"github.com/mini-eggs/smscp/pkg/builder"
+	"github.com/mini-eggs/smscp/pkg/mode"
 )
 
 func H(w http.ResponseWriter, r *http.Request) {

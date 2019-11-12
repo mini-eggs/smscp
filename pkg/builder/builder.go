@@ -3,11 +3,11 @@ package builder
 import (
 	"os"
 
-	"smscp.xyz/internal/api"
-	"smscp.xyz/internal/db"
-	"smscp.xyz/internal/security"
-	"smscp.xyz/internal/sms/twilio"
-	"smscp.xyz/pkg/mode"
+	"github.com/mini-eggs/smscp/internal/api"
+	"github.com/mini-eggs/smscp/internal/db"
+	"github.com/mini-eggs/smscp/internal/security"
+	"github.com/mini-eggs/smscp/internal/sms/twilio"
+	"github.com/mini-eggs/smscp/pkg/mode"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"

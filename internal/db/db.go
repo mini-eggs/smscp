@@ -11,8 +11,8 @@ import (
 	// for mysql support
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/pkg/errors"
-	"smscp.xyz/internal/common"
-	"smscp.xyz/pkg/mode"
+	"github.com/mini-eggs/smscp/internal/common"
+	"github.com/mini-eggs/smscp/pkg/mode"
 )
 
 type DB struct {

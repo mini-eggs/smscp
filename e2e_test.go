@@ -8,8 +8,8 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"gopkg.in/go-playground/assert.v1"
-	"smscp.xyz/pkg/builder"
-	"smscp.xyz/pkg/mode"
+	"github.com/mini-eggs/smscp/pkg/builder"
+	"github.com/mini-eggs/smscp/pkg/mode"
 )
 
 var (

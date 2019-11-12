@@ -7,8 +7,8 @@ import (
 	// but dep is used to minify web/html/*
 	// before deploy
 	_ "github.com/tdewolff/minify"
-	"smscp.xyz/pkg/builder"
-	"smscp.xyz/pkg/mode"
+	"github.com/mini-eggs/smscp/pkg/builder"
+	"github.com/mini-eggs/smscp/pkg/mode"
 )
 
 func main() {

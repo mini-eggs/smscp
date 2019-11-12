@@ -20,7 +20,7 @@ import (
 
 const (
 	// BASE = "http://localhost:3000"
-	BASE        = "https://smscp.xyz"
+	BASE        = "https://github.com/mini-eggs/smscp"
 	APILogin    = BASE + "/cli/user/login"
 	APIRegister = BASE + "/cli/user/create"
 	APICreate   = BASE + "/cli/note/create"
@@ -278,8 +278,8 @@ func latest(c *cli.Context) error {
 func main() {
 	app := cli.NewApp()
 	app.Name = "smscp"
-	app.Usage = "CLI for https://smscp.xyz/"
-	app.Version = "0.1.2"
+	app.Usage = "CLI for https://github.com/mini-eggs/smscp/"
+	app.Version = "0.1.3"
 
 	app.Commands = []cli.Command{
 		{Name: "register", Action: register},

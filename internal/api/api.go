@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/ttacon/libphonenumber"
-	"smscp.xyz/internal/common"
+	"github.com/mini-eggs/smscp/internal/common"
 )
 
 type App struct {
