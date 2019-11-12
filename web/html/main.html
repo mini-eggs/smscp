@@ -38,7 +38,8 @@
     }
 
     aside > span:first-of-type,
-    footer > span:first-of-type {
+    footer > span:first-of-type,
+    #bg-spacer > span:last-of-type {
       margin-top: -100px;
     }
 
@@ -48,7 +49,6 @@
     }
 
     #bg-spacer > span:last-of-type > i {
-      margin-top: -100px;
       border-right: 100vw solid #bee3f8;
     }
 
@@ -78,6 +78,20 @@
     pre {
       overflow: auto;
       -webkit-overflow-scrolling: touch; 
+    }
+
+    #notes > div > div > span {
+      max-width: 5rem;
+    }
+    @media (min-width: 640px) { 
+      #notes > div > div > span {
+        max-width: 10rem;
+      }
+    }
+    @media (min-width: 768px) {
+      #notes > div > div > span {
+        max-width: 20rem;
+      }
     }
 
   </style>
@@ -205,18 +219,11 @@
         <script>
           (function() {
             var form = document.getElementById('latest-form');
-            form.addEventListener('submit', copy)
-            function copy(event) {
+            form.addEventListener('submit', function(event) {
+              event.stopPropagation();
               event.preventDefault();
-              var el = document.createElement('textarea');
-              el.value = '{{ .Latest.Text }}';
-              el.setAttribute('readonly', '');
-              el.style = {position: 'absolute', left: '-9999px'};
-              document.body.appendChild(el);
-              el.select();
-              document.execCommand('copy');
-              document.body.removeChild(el);
-            }
+              smscp.copy('{{ .Latest.NoteText }}')
+            });
           })();
         </script>
         <hr class="my-10 -mb-10 border-b-2 border-gray-200">
@@ -602,8 +609,8 @@
   <div class='py-20 bg-blue-200 relative -mt-20'>
     <div class='py-20 bg-blue-200'>
       <div id='bg-spacer' class='py-20 bg-blue-200'>
-        <span class='overflow--hidden z-20 absolute top-0 w-full h-full'>
-          <i class='absolute top-0 w-full'></i>
+        <span class='overflow-hidden z-20 absolute top-0 left-0 w-full h-full'>
+          <i class='absolute top-0 left-0 w-full'></i>
         </span>
       </div>
     </div>
@@ -613,18 +620,18 @@
   <div class='bg-blue-400 py-20 relative'>
     <aside class='py-20'>
 
-      <span class='overflow--hidden z-20 absolute top-0 w-full h-full'>
-        <i class='absolute top-0 w-full'></i>
+      <span class='overflow-hidden z-20 absolute top-0 left-0 w-full h-full'>
+        <i class='absolute top-0 left-0 w-full'></i>
       </span>
 
       <span class='z-30 absolute top-0 left-0 w-full -mt-20'>
         <div class='mx-5 lg:mx-0 -mt-5'>
           <div class='max-w-4xl mx-auto'>
-          <div class='bg-white shadow-xl rounded mx-5 p-5 pt-0'>
-            <h1 class='text-6xl font-black text-gray-700'>
+          <div class='bg-white shadow-xl rounded mx-5 p-5 md:pt-0'>
+            <h1 class='text-4xl md:text-6xl font-black text-gray-700'>
               Your notes
             </h1> 
-            <h2 class="text-2xl text-gray-600">
+            <h2 class="text-xl md:text-2xl text-gray-600">
               Your previous notes will appear here.
             </h2> 
           </div>
@@ -634,16 +641,16 @@
 
       <div class='relative z-30 max-w-4xl m-auto mb-20'>
         <div class='mx-5'>
-          <div class="-m-2 text-center">
+          <div id='notes' class="-m-2 text-center">
             {{ range .Notes }}
             <div class="p-2 inline-block">
               <div class="shadow inline-flex items-center bg-white leading-none text-gray-600 rounded-full p-2 shadow text-teal text-sm">
-                <button>
+                <button onclick='smscp.copy("{{ .NoteText }}")'>
                   <span class="inline-flex bg-blue-600 text-white rounded-full h-6 px-3 justify-center items-center text-">Copy</span>
                 </button>
-                <span class="inline-flex px-2 max-w-xs">
+                <span class="inline-flex px-2">
                   <span class='overflow-hidden whitespace-no-wrap truncate'>
-                    {{ .Text }}
+                    {{ .NoteShort }}
                   </span>
                 </span>
               </div>
@@ -652,80 +659,63 @@
           </div>
           {{ if .NotesHasMore }}
           <div class='flex justify-center align-center'>
-            <button class="mt-20 border rounded shadow border-blue-900 bg-blue-900 text-white block rounded-sm font-bold py-4 px-6 ml-2 flex items-center">
-              Load more
-              <svg class="h-5 w-5 ml-2 fill-current" clasversion="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-                   viewBox="-49 141 512 512" style="enable-background:new -49 141 512 512;" xml:space="preserve">
-              <path id="XMLID_11_" d="M-24,422h401.645l-72.822,72.822c-9.763,9.763-9.763,25.592,0,35.355c9.763,9.764,25.593,9.762,35.355,0
-                  l115.5-115.5C460.366,409.989,463,403.63,463,397s-2.634-12.989-7.322-17.678l-115.5-115.5c-9.763-9.762-25.593-9.763-35.355,0
-                  c-9.763,9.763-9.763,25.592,0,35.355l72.822,72.822H-24c-13.808,0-25,11.193-25,25S-37.808,422-24,422z"/>
-              </svg>
+            <button id='more' class="mt-20 border rounded shadow border-blue-900 bg-blue-900 text-white block rounded-sm font-bold py-4 px-6 ml-2 flex items-center">
+              <span>more</span>
             </button>
           </div>
+          <script>
+            (function() {
+              var page = 0;
+              var container = document.getElementById("notes");
+              var btn = document.getElementById("more");
+              var span = btn.querySelector('span')
+              btn.addEventListener("click", async function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                btn.setAttribute("disabled", true);
+                span.textContent = "loading";
+                try {
+                  var req = await fetch(`/note/list/${++page}`)
+                  var res = await req.json()
+                  btn.removeAttribute("disabled");
+                  span.textContent = "more";
+                  if(!res.NotesHasMore) {
+                    btn.parentElement.removeChild(btn);
+                  }
+                  for(var note of res.Notes) {
+                    container.innerHTML += `
+                      <div class="p-2 inline-block">
+                        <div class="shadow inline-flex items-center bg-white leading-none text-gray-600 rounded-full p-2 shadow text-teal text-sm">
+                          <button onclick='smscp.copy("${note.NoteText}")'>
+                            <span class="inline-flex bg-blue-600 text-white rounded-full h-6 px-3 justify-center items-center text-">Copy</span>
+                          </button>
+                          <span class="inline-flex px-2 max-w-xs">
+                            <span class='overflow-hidden whitespace-no-wrap truncate'>
+                              ${note.NoteShort}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    `;
+                  }
+                }
+                catch(e) {
+                  span.textContent = e.toString();
+                }
+              });
+            })();
+          </script>
+
           {{ end }}
         </div>
       </div>
     </aside>
   </div>
-  <!--
-  <form id='latest-form' action="/placeholder">
-    <fieldset>
-      <legend>notes</legend>
-      <div id="notes">
-        {{ range .Notes }}
-        <details>
-          <summary>{{ .Short }}</summary>
-          <p>{{ .Text }}</p>
-        </details>
-        {{ end }}
-      </div>
-      {{ if .NotesHasMore }}
-      <br/>
-      <button id="more">load more</button>
-      <script>
-        (function() {
-          let page = 0;
-          let container = document.getElementById("notes");
-          let btn = document.getElementById("more");
-          btn.addEventListener("click", async function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            btn.setAttribute("disabled", true);
-            btn.textContent = "loading";
-            try {
-              let req = await fetch(`/note/list/${++page}`)
-              let res = await req.json()
-              btn.removeAttribute("disabled");
-              btn.textContent = "load more";
-              if(!res.NotesHasMore) {
-                btn.parentElement.removeChild(btn);
-              }
-              for(let note of res.Notes) {
-                let details = document.createElement("details");
-                let summary = document.createElement("summary");
-                summary.textContent = note.NoteShort;
-                details.appendChild(summary)
-                let p = document.createElement("p");
-                p.textContent = note.NoteText;
-                details.appendChild(p)
-                container.appendChild(details);
-              }
-            }
-            catch(e) {
-              btn.textContent = e.toString();
-            }
-          });
-        })();
-      </script>
-      {{ end }}
-    </fieldset>
-  </form>
-  -->
   {{ end }}
 
   <footer class="relative bg-gray-700 text-gray-100 px-2 pt-0 pb-2 mt-0">
 
-    <span class='overflow-hidden z-20 absolute top-0 w-full h-full'>
+    <span class='overflow-hidden z-20 absolute top-0 left-0 w-full h-full'>
       <i class='absolute top-0 w-full'></i>
     </span>
 
@@ -775,6 +765,21 @@
 
   <script>
     {{ template "mask.min.js" }}
+    // globals
+    (function() {
+      window.smscp = {};
+      // clipboard 
+      window.smscp.copy = function copy(text) {
+        var el = document.createElement('textarea');
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style = {position: 'absolute', left: '-9999px'};
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+    })();
     // phone input
     (function() {
       var phoneMask = ['(', /[1-9]/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, '-', /\d/, /\d/, /\d/, /\d/];
@@ -813,28 +818,25 @@
         document.getElementById('register-link')
       );
 
+      // highlight form
+      // on button press
+      // with off touch events
       function withEvents(el, btn) {
         if(!el || !btn) {
           return 
         }
-
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           e.preventDefault();
-
           unHighlight();
-
           el.classList.add('shadow-outline');
           el.querySelector('input').focus(); // focus first input
-
           el.addEventListener('click', function(e) {
             e.stopPropagation();
           });
-
           document.body.addEventListener('click', function() {
             unHighlight();
           });
-
           function unHighlight() {
             var elements = document.querySelectorAll('.shadow-outline');
             for(var e = 0; e < elements.length; e++) {
