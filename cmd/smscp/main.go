@@ -42,7 +42,7 @@ func post(dest string, values hash) (*http.Response, error) {
 		val = strings.Trim(strings.Trim(strings.Trim(val, " "), "\n"), "\r\n")
 		next.Add(key, val)
 	}
-	return http.PostForm(dest, next)
+	return http.PostForm(dest, next) // nolint - dest is always a constant (look up)
 }
 
 // cli commands
