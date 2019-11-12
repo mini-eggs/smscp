@@ -1,18 +1,20 @@
 dev:
 	gin 
 
-deploy: cli
-	cp -r web pkg/handler && \
+deploy: cli cpminify
 	now && now alias smscp.minieggs40.now.sh beta.smscp.xyz && \
 	rm -rf pkg/handler/web
 
 push: 
 	now alias smscp.minieggs40.now.sh smscp.xyz
 
-yolo: cli
-	cp -r web pkg/handler && \
+yolo: cli minify
 	now && now alias smscp.minieggs40.now.sh smscp.xyz && \
 	rm -rf pkg/handler/web
+
+cpminify:
+	cp -r web pkg/handler && \
+	bash -c "find pkg/handler/web/html -type f | grep -e '\.html' -e '\.css' -e '\.js' | xargs -I {} echo 'minify {} > {}.out && mv {}.out {}' | bash"
 
 test: 
 	cat .env | xargs -I {} printf "%s " {} | xargs -I {} echo "env {} go test ./..." | bash
