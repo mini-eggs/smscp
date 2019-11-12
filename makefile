@@ -8,7 +8,7 @@ deploy: cli cpminify
 push: 
 	now alias smscp.minieggs40.now.sh smscp.xyz
 
-yolo: cli minify
+yolo: cli cpminify
 	now && now alias smscp.minieggs40.now.sh smscp.xyz && \
 	rm -rf pkg/handler/web
 
