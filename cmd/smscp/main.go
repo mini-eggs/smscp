@@ -279,7 +279,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "smscp"
 	app.Usage = "CLI for https://smscp.xyz/"
-	app.Version = "0.1.0"
+	app.Version = "0.1.2"
 
 	app.Commands = []cli.Command{
 		{Name: "register", Action: register},
