@@ -48,12 +48,12 @@ func post(dest string, values hash) (*http.Response, error) {
 // cli commands
 
 func register(c *cli.Context) error {
-	fmt.Printf("Email: ")
-	email, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	fmt.Printf("Username: ")
+	username, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
-		return errors.Wrap(err, "failed to read email from standard in")
+		return errors.Wrap(err, "failed to read username from standard in")
 	}
-	email = strings.Trim(strings.Trim(email, " "), "\n")
+	username = strings.Trim(strings.Trim(username, " "), "\n")
 
 	fmt.Printf("Password: ")
 	pass, err := terminal.ReadPassword(int(os.Stdin.Fd()))
@@ -79,7 +79,7 @@ func register(c *cli.Context) error {
 	/* make http req */
 
 	resp, err := post(APIRegister, hash{
-		"Email":    email,
+		"Username": username,
 		"Phone":    phone,
 		"Password": string(pass),
 		"Verify":   string(verify),
@@ -121,12 +121,12 @@ func register(c *cli.Context) error {
 }
 
 func login(c *cli.Context) error {
-	fmt.Printf("Email: ")
-	email, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	fmt.Printf("Username: ")
+	username, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
-		return errors.Wrap(err, "failed to read email from standard in")
+		return errors.Wrap(err, "failed to read username from standard in")
 	}
-	email = strings.Trim(strings.Trim(email, " "), "\n")
+	username = strings.Trim(strings.Trim(username, " "), "\n")
 
 	fmt.Printf("Password: ")
 	pass, err := terminal.ReadPassword(int(os.Stdin.Fd()))
@@ -138,7 +138,7 @@ func login(c *cli.Context) error {
 	/* make http req */
 
 	resp, err := post(APILogin, hash{
-		"Email":    email,
+		"Username": username,
 		"Password": string(pass),
 	})
 	if err != nil {

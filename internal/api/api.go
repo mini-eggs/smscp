@@ -26,12 +26,13 @@ const (
 type dataLayer interface {
 	UserGet(token string) (common.User, error)
 	UserGetByNumber(number string) (common.User, error)
-	UserLogin(email, pass string) (common.User, error)
-	UserCreate(email, pass, phone string) (common.User, error)
+	UserLogin(username, pass string) (common.User, error)
+	UserCreate(username, pass, phone string) (common.User, error)
 	NoteGetList(user common.User, page, count int) ([]common.Note, bool, error)
 	NoteGetLatest(user common.User) (common.Note, error)
 	NoteGetLatestWithTime(user common.User, t time.Duration) (common.Note, error)
 	NoteCreate(user common.User, text string) (common.Note, error)
+	Migrate(key string) error
 }
 
 type smsLayer interface {
@@ -158,7 +159,7 @@ func (app App) NoteLatestCLI(c *gin.Context) {
 
 func (app App) UserLogin(c *gin.Context) {
 	var payload struct {
-		Email, Password string
+		Username, Password string
 	}
 
 	err := c.Bind(&payload)
@@ -167,7 +168,7 @@ func (app App) UserLogin(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserLogin(payload.Email, payload.Password)
+	user, err := app.data.UserLogin(payload.Username, payload.Password)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -185,7 +186,7 @@ func (app App) UserLogin(c *gin.Context) {
 
 func (app App) UserLoginCLI(c *gin.Context) {
 	var payload struct {
-		Email, Password string
+		Username, Password string
 	}
 
 	err := c.Bind(&payload)
@@ -194,7 +195,7 @@ func (app App) UserLoginCLI(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserLogin(payload.Email, payload.Password)
+	user, err := app.data.UserLogin(payload.Username, payload.Password)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -205,7 +206,7 @@ func (app App) UserLoginCLI(c *gin.Context) {
 
 func (app App) UserCreate(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify, Phone string
+		Username, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -229,7 +230,7 @@ func (app App) UserCreate(c *gin.Context) {
 	}
 	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
 
-	user, err := app.data.UserCreate(payload.Email, payload.Password, full)
+	user, err := app.data.UserCreate(payload.Username, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -247,7 +248,7 @@ func (app App) UserCreate(c *gin.Context) {
 
 func (app App) UserCreateCLI(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify, Phone string
+		Username, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -271,7 +272,7 @@ func (app App) UserCreateCLI(c *gin.Context) {
 	}
 	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
 
-	user, err := app.data.UserCreate(payload.Email, payload.Password, full)
+	user, err := app.data.UserCreate(payload.Username, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -289,7 +290,7 @@ func (app App) UserCreateCLI(c *gin.Context) {
 
 func (app App) UserUpdate(c *gin.Context) {
 	var payload struct {
-		Email, Password, Verify, Phone string
+		Username, Password, Verify, Phone string
 	}
 
 	err := c.Bind(&payload)
@@ -309,8 +310,8 @@ func (app App) UserUpdate(c *gin.Context) {
 		return
 	}
 
-	if payload.Email != "" {
-		user.SetEmail(payload.Email)
+	if payload.Username != "" {
+		user.SetUsername(payload.Username)
 	}
 
 	if payload.Password != "" {
@@ -421,6 +422,22 @@ func (app App) NoteListJSON(c *gin.Context) {
 
 func (app App) Pong(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
+}
+
+func (app App) MigrateDB(c *gin.Context) {
+	var payload struct{ MigrationKey string }
+
+	if err := c.Bind(&payload); err != nil {
+		app.error(c, errors.Wrap(err, "not a valid migration payload"))
+		return
+	}
+
+	if err := app.data.Migrate(payload.MigrationKey); err != nil {
+		app.error(c, errors.Wrap(err, "failed to run migration"))
+		return
+	}
+
+	c.String(http.StatusOK, "migration complete")
 }
 
 func (app App) currentUser(c *gin.Context) (common.User, error) {

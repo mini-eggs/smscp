@@ -1,9 +1,11 @@
 package main_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/Pallinder/go-randomdata"
@@ -26,6 +28,11 @@ func fromSession(in *httptest.ResponseRecorder, req *http.Request) *httptest.Res
 	return out
 }
 
+// Prehook to remove test db data
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
+}
+
 // data gen
 
 func goodNote() url.Values {
@@ -42,10 +49,10 @@ func badNote() url.Values {
 func goodUser() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
-	form.Add("Email", randomdata.Email())
+	form.Add("Username", randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass)
-	form.Add("Phone", "(202) 555-0139") // fake number
+	form.Add("Phone", fmt.Sprintf("(208) %d-%d", randomdata.Number(100, 999), randomdata.Number(1000, 9999)))
 	return form
 }
 
@@ -53,20 +60,20 @@ func badUserPass() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
 	pass2 := randomdata.SillyName()
-	form.Add("Email", randomdata.Email())
+	form.Add("Username", randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass2)
-	form.Add("Phone", "(202) 555-0139") // fake number
+	form.Add("Phone", fmt.Sprintf("(208) %d-%d", randomdata.Number(100, 999), randomdata.Number(1000, 9999)))
 	return form
 }
 
 func badUserPhone() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
-	form.Add("Email", randomdata.Email())
+	form.Add("Username", randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass)
-	form.Add("Phone", "+233 007 4 41 36014") // fake number - not supported
+	form.Add("Phone", randomdata.PhoneNumber()) // unsupported national
 	return form
 }
 
@@ -124,8 +131,8 @@ func TestUserUpdateGood(t *testing.T) {
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 
 	// modify user
-	user.Del("Email")
-	user.Add("Email", randomdata.Email())
+	user.Del("Username")
+	user.Add("Username", randomdata.SillyName())
 
 	// update user
 	req, _ = http.NewRequest("POST", "/user/update", nil)
@@ -170,8 +177,8 @@ func TestUserUpdateBad(t *testing.T) {
 		assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 
 		// modify user
-		badUser.Del("Email")
-		badUser.Set("Email", user.Get("Email"))
+		badUser.Del("Username")
+		badUser.Set("Username", user.Get("Username"))
 
 		// update user
 		req, _ = http.NewRequest("POST", "/user/update", nil)

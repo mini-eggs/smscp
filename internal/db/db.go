@@ -16,8 +16,9 @@ import (
 )
 
 type DB struct {
-	conn     *gorm.DB
-	security securityLayer
+	conn         *gorm.DB
+	security     securityLayer
+	migrationKey string
 }
 
 type securityLayer interface {
@@ -27,10 +28,11 @@ type securityLayer interface {
 	TokenFrom(tokenString string) (jwt.MapClaims, error)
 }
 
-func Default(conn *gorm.DB, security securityLayer) DB {
+func Default(conn *gorm.DB, security securityLayer, mkey string) DB {
 	return DB{
 		conn,
 		security,
+		mkey,
 	}
 }
 
@@ -55,22 +57,34 @@ func ConnDefault() (*gorm.DB, error) {
 }
 
 func (db DB) SetMode(m mode.Mode) {
-	//db.conn.AutoMigrate(&SmsCpUser{})
-	//db.conn.AutoMigrate(&SmsCpNote{})
 	switch m {
 	case mode.Test:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_test" }
 		return
 	case mode.Dev:
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_dev" }
-	default:
 		return
+	default:
+		break
 	}
 }
 
-func (db DB) UserLogin(email, plaintext string) (common.User, error) {
+func (db DB) Migrate(key string) error {
+	if key != db.migrationKey {
+		return errors.New("invalid migration key")
+	}
+	if res := db.conn.AutoMigrate(&SmsCpUser{}); res.Error != nil {
+		return res.Error
+	}
+	if res := db.conn.AutoMigrate(&SmsCpNote{}); res.Error != nil {
+		return res.Error
+	}
+	return nil
+}
+
+func (db DB) UserLogin(username, plaintext string) (common.User, error) {
 	var user SmsCpUser
-	status := db.conn.Where(&SmsCpUser{UserEmail: email}).First(&user)
+	status := db.conn.Where(&SmsCpUser{UserUsername: username}).First(&user)
 
 	if status.Error != nil {
 		return nil, status.Error
@@ -130,17 +144,17 @@ func (db DB) UserGetByNumber(number string) (common.User, error) {
 	return &user, nil
 }
 
-func (db DB) UserCreate(email, plaintext, phone string) (common.User, error) {
+func (db DB) UserCreate(username, plaintext, phone string) (common.User, error) {
 	pass, err := db.security.HashCreate(plaintext)
 	if err != nil {
 		return nil, errors.New("failed to create user; password hash not obtained")
 	}
 
 	user := SmsCpUser{
-		UserEmail: email,
-		UserPass:  pass,
-		UserPhone: phone,
-		db:        db,
+		UserUsername: username,
+		UserPass:     pass,
+		UserPhone:    phone,
+		db:           db,
 	}
 
 	status := db.conn.Create(&user)
@@ -240,22 +254,22 @@ func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 
 type SmsCpUser struct {
 	gorm.Model
-	UserEmail string `gorm:"unique;not null"`
-	UserPass  string
-	UserPhone string
-	UserNotes []SmsCpNote
-	token     string
-	err       error
-	db        DB
+	UserUsername string `gorm:"unique;not null"`
+	UserPass     string `gorm:"not null"`
+	UserPhone    string `gorm:"unique;not null"`
+	UserNotes    []SmsCpNote
+	token        string
+	err          error
+	db           DB
 }
 
-func (SmsCpUser *SmsCpUser) Email() string { return SmsCpUser.UserEmail }
-func (SmsCpUser *SmsCpUser) Phone() string { return SmsCpUser.UserPhone }
-func (SmsCpUser *SmsCpUser) ID() uint      { return SmsCpUser.Model.ID }
-func (SmsCpUser *SmsCpUser) Token() string { return SmsCpUser.token }
+func (SmsCpUser *SmsCpUser) Username() string { return SmsCpUser.UserUsername }
+func (SmsCpUser *SmsCpUser) Phone() string    { return SmsCpUser.UserPhone }
+func (SmsCpUser *SmsCpUser) ID() uint         { return SmsCpUser.Model.ID }
+func (SmsCpUser *SmsCpUser) Token() string    { return SmsCpUser.token }
 
-func (SmsCpUser *SmsCpUser) SetEmail(value string) {
-	SmsCpUser.UserEmail = value
+func (SmsCpUser *SmsCpUser) SetUsername(value string) {
+	SmsCpUser.UserUsername = value
 }
 
 func (SmsCpUser *SmsCpUser) SetPhone(value string) {

@@ -21,6 +21,10 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 		return nil, databaseErr
 	}
 
+	if m == mode.Test {
+		gin.SetMode(gin.TestMode)
+	}
+
 	router := gin.Default()
 	router.LoadHTMLGlob("web/html/*")
 	router.Static("/static", "web/static/")
@@ -29,7 +33,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 
 	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 	security := security.Default(os.Getenv("JWT_SECRET"))
-	data := db.Default(databaseConn, security)
+	data := db.Default(databaseConn, security, os.Getenv("MIGRATION_KEY"))
 	data.SetMode(m)
 	app := api.AppDefault(data, sms)
 
@@ -37,6 +41,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	router.POST("/", app.Page)
 
 	router.GET("/ping", app.Pong)
+	router.POST("/migrate", app.MigrateDB)
 
 	router.POST("/user/login", app.UserLogin)
 	router.POST("/user/create", app.UserCreate)

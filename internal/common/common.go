@@ -2,10 +2,10 @@ package common
 
 type User interface {
 	ID() uint
-	Email() string
+	Username() string
 	Phone() string
 	Token() string /* Stored in session, secret, unique per session. */
-	SetEmail(string)
+	SetUsername(string)
 	SetPass(string)
 	SetPhone(string)
 	Save() error
