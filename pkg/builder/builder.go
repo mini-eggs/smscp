@@ -31,10 +31,13 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	store := cookie.NewStore([]byte(os.Getenv("SESSION_SECRET")))
 	router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), store))
 
-	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 	security := security.Default(os.Getenv("JWT_SECRET"))
+
 	data := db.Default(databaseConn, security, os.Getenv("MIGRATION_KEY"))
 	data.SetMode(m)
+
+	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"), data)
+
 	app := api.AppDefault(data, sms)
 
 	router.GET("/", app.Page)
