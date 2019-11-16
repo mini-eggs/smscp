@@ -119,10 +119,10 @@
           {{ if .HasUser }}
           <h3 class='text-white font-black text-4xl mt-10 sm:mt-20 md:-mt-20 mb-5'>Welcome back</h3>
 
-          <a href='#create'>
+          <a href='#export'>
             <button class="bg-blue-800 hover:bg-blue-700 text-white font-bold py-2
                            px-4 rounded hover:shadow">
-              Create
+              My data
             </button>
           </a>
 
@@ -322,7 +322,7 @@
             <div class='flex flex-col w-full h-full bg-white shadow-md pt-6 pb-10 rounded px-10'>
 
               <!-- export all data -->
-              <form class='flex flex-1 items-center' action='/gdpr' id='export' method='GET'>
+              <form class='pt-3 sm:pt-0 flex flex-1 items-center' action='/gdpr' id='export' method='GET'>
                 <fieldset>
                   <legend class='block text-grey-700 text-xl font-bold mb-5'>
                     Export your data. Take your data with you.
@@ -338,12 +338,14 @@
                 </fieldset>
               </form>
 
+              <div class='my-5 sm:my-0'></div>
+
               <!-- delete all data -->
-              <form class='flex flex-1 items-center' action='/gdpr' id='delete' method='DELETE'>
+              <form class='flex flex-1 items-center' action='/gdpr' id='delete' method='POST'>
                 <fieldset>
                   <legend class='block text-grey-700 text-xl font-bold mb-5'>
                     Permanently remove your data from 
-                    <strong class='font-black text-gray-700'>smscp</strong>.
+                    <strong class='font-black'>smscp</strong>.
                   </legend>
                   <div>
                     <div class="flex items-center justify-between">
@@ -849,8 +851,8 @@
       );
 
       withEvents(
-        document.getElementById('create'),
-        document.querySelector('a[href=\'#create\'')
+        document.getElementById('export'),
+        document.querySelector('a[href=\'#export\'')
       );
 
       withEvents(
@@ -871,10 +873,21 @@
           return 
         }
         btn.addEventListener('click', function(e) {
-          e.stopPropagation();
           e.preventDefault();
+          e.stopPropagation();
           unHighlight();
-          el.classList.add('shadow-outline');
+          // highlight container if it has class of 'w-full'
+          // keep looking in parents until
+          var container = el;
+          while(!container.classList.contains('shadow-outline')) {
+            if(container.classList.contains('w-full')) {
+              console.log({container})
+              container.classList.add('shadow-outline');
+            }
+            else {
+              container = container.parentElement;
+            }
+          }
           el.querySelector('input').focus(); // focus first input
           el.addEventListener('click', function(e) {
             e.stopPropagation();

@@ -7,6 +7,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
+	"golang.org/x/exp/utf8string"
 
 	// for mysql support
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -68,7 +69,7 @@ func Default(conn *gorm.DB, security securityLayer, mkey string) DB {
 }
 
 func ConnDefault() (*gorm.DB, error) {
-	connStr := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+	connStr := fmt.Sprintf("%s:%s@(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 		os.Getenv("DB_HOST"),
@@ -79,6 +80,9 @@ func ConnDefault() (*gorm.DB, error) {
 	if err != nil {
 		return conn, errors.Wrap(err, "failed to connect to database")
 	}
+
+	// for tables
+	conn = conn.Set("gorm:table_options", "charset=utf8mb4")
 
 	conn.DB().SetMaxIdleConns(10)
 	conn.DB().SetMaxOpenConns(100)
@@ -96,7 +100,7 @@ func (db DB) SetMode(m mode.Mode) {
 		gorm.DefaultTableNameHandler = func(db *gorm.DB, n string) string { return n + "_dev" }
 		return
 	default:
-		break
+		return
 	}
 }
 
@@ -303,7 +307,6 @@ func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 	}
 
 	status := db.conn.Create(&note)
-
 	if status.Error != nil {
 		return nil, status.Error
 	}
@@ -334,6 +337,14 @@ func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, er
 	var notes []common.Note
 	for _, note := range dbnotes {
 		note.NoteShort = note.Short() /* special case, bc in templates we can just call method */
+
+		token, err := this.security.TokenCreate(jwt.MapClaims{"NoteID": note.Model.ID})
+		if err != nil {
+			return nil, err
+		}
+
+		note.token = token
+
 		notes = append(notes, note)
 	}
 
@@ -357,8 +368,25 @@ func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, er
 	// return notes, msgs, nil
 }
 
-func (this DB) UserDel(common.User) error {
-	return errors.New("not complete")
+func (this DB) UserDel(user common.User) error {
+	// delete notes
+	status := this.conn.
+		Where(&SmsCpNote{UserID: user.ID()}).
+		Unscoped(). // Perm delete.
+		Delete(&SmsCpNote{})
+	if status.Error != nil {
+		return errors.Wrap(status.Error, "failed to delete any data")
+	}
+
+	// delete user
+	status = this.conn.
+		Unscoped(). // Perm delete.
+		Delete(&SmsCpUser{Model: gorm.Model{ID: user.ID()}})
+	if status.Error != nil {
+		return errors.Wrap(status.Error, "deleted notes successfully but failed to delete user")
+	}
+
+	return nil
 }
 
 // SmsCpUser class
@@ -400,10 +428,11 @@ func (SmsCpUser *SmsCpUser) Save() error {
 
 func (SmsCpNote SmsCpNote) Short() string {
 	top := 50
-	if len(SmsCpNote.NoteText) > top {
-		return SmsCpNote.NoteText[:top] + "..."
+	str := utf8string.NewString(SmsCpNote.NoteText)
+	if str.RuneCount() > top {
+		return str.Slice(0, top)
 	}
-	return SmsCpNote.NoteText
+	return str.String()
 }
 
 func (SmsCpNote SmsCpNote) Text() string  { return SmsCpNote.NoteText }

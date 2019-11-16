@@ -19,5 +19,6 @@ require (
 	github.com/ttacon/libphonenumber v1.0.1
 	github.com/urfave/cli v1.22.1
 	golang.org/x/crypto v0.0.0-20191111213947-16651526fdb4
+	golang.org/x/exp v0.0.0-20190121172915-509febef88a4
 	gopkg.in/go-playground/assert.v1 v1.2.1
 )

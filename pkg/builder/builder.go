@@ -65,7 +65,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 
 	// gdpr
 	router.GET("/gdpr", app.UserExportAllData)
-	router.DELETE("/gdpr", app.UserDeleteAllData)
+	router.POST("/gdpr", app.UserDeleteAllData)
 
 	return router, nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -497,8 +498,9 @@ func (app App) UserExportAllData(c *gin.Context) {
 		return
 	}
 
+	filename := fmt.Sprintf("%s_user_data.csv", url.QueryEscape(user.Username()))
 	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=MyVerySpecial.csv")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	c.String(http.StatusOK, string(byt))
 }
 

@@ -2,7 +2,6 @@ package csv
 
 import (
 	stdcsv "encoding/csv"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -14,7 +13,7 @@ type CSV struct{}
 func Default() (this CSV) { return }
 
 func (this CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg */) (*os.File, error) {
-	file, err := os.Create("result.csv")
+	file, err := os.Create("/tmp/result.csv")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create csv file")
 	}
@@ -23,12 +22,25 @@ func (this CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Ms
 	writer := stdcsv.NewWriter(file)
 	defer writer.Flush()
 
+	headers := []string{
+		"user_id",
+		"user_username",
+		"user_phone",
+		"note_id",
+		"note_text",
+	}
+	if err := writer.Write(headers); err != nil {
+		return nil, errors.Wrap(err, "failed to write header to csv")
+	}
+
 	// user
 	data := []string{
-		fmt.Sprintf("%d", user.ID()),
 		user.Token(),
-		user.Username(),
+		user.Username(), // TODO: escape for ';'
 		user.Phone(),
+		"",
+		"",
+		"",
 	}
 	if err := writer.Write(data); err != nil {
 		return nil, errors.Wrap(err, "failed to write user to csv")
@@ -37,7 +49,9 @@ func (this CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Ms
 	// notes
 	for _, value := range notes {
 		data := []string{
-			fmt.Sprintf("%d", value.ID()),
+			"",
+			"",
+			"",
 			value.Token(),
 			value.Text(),
 		}
