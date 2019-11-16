@@ -40,12 +40,12 @@ type dataLayer interface {
 	// special database
 	Migrate(key string) error
 	// special gdpr
-	UserAll(common.User) ([]common.Note, []common.Msg, error)
+	UserAll(common.User) ([]common.Note /* []common.Msg, */, error)
 	UserDel(common.User) error
 }
 
 type csvLayer interface {
-	ToFile(common.User, []common.Note, []common.Msg) (*os.File, error)
+	ToFile(common.User, []common.Note /* []common.Msg */) (*os.File, error)
 }
 
 type smsLayer interface {
@@ -479,13 +479,13 @@ func (app App) UserExportAllData(c *gin.Context) {
 		return
 	}
 
-	notes, messages, err := app.data.UserAll(user)
+	notes /* messages, */, err := app.data.UserAll(user)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "failed to retrieve user data"))
 		return
 	}
 
-	file, err := app.csv.ToFile(user, notes, messages)
+	file, err := app.csv.ToFile(user, notes /* , messages */)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "failed to generate csv file export"))
 		return

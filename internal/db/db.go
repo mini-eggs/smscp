@@ -21,6 +21,37 @@ type DB struct {
 	migrationKey string
 }
 
+type SmsCpUser struct {
+	gorm.Model
+	UserUsername string `gorm:"unique;not null"`
+	UserPass     string `gorm:"not null"`
+	UserPhone    string `gorm:"unique;not null"`
+	UserNotes    []SmsCpNote
+	token        string
+	err          error
+	db           DB
+}
+
+type SmsCpNote struct {
+	gorm.Model
+	NoteText  string `sql:"type:text"`
+	NoteShort string `gorm:"-"` /* ignore! */
+	UserID    uint
+	token     string
+	db        DB
+}
+
+// // transaction of a sms message
+// type SmsCpMsg struct {
+// 	gorm.Model
+// 	UserID  uint
+// 	MsgText string `gorm:"not nuull" sql:"type:text"`
+// 	MsgFrom string `gorm:"not null"` // a phone number
+// 	MsgTo   string `gorm:"not null"` // a phone number
+// 	token   string // nolint
+// 	db      DB     // nolint
+// }
+
 type securityLayer interface {
 	HashCreate(pass string) (string, error)
 	HashCompare(pass, hash string) error
@@ -79,8 +110,46 @@ func (db DB) Migrate(key string) error {
 	if res := db.conn.AutoMigrate(&SmsCpNote{}); res.Error != nil {
 		return res.Error
 	}
+	// if res := db.conn.AutoMigrate(&SmsCpMsg{}); res.Error != nil {
+	// 	return res.Error
+	// }
 	return nil
 }
+
+// func (db DB) MsgCreate(text, to, from string) (common.Msg, error) {
+// 	user, err := db.UserGetByNumber(to)
+// 	if err != nil {
+// 		// This is likely because the number is our bots. Let's try the `from`
+// 		// number.
+// 		user, err = db.UserGetByNumber(from)
+// 		if err != nil {
+// 			// Okay, now this is an issue.
+// 			return nil, errors.Wrap(err, "failed to find user from number; cannot create message transaction")
+// 		}
+// 	}
+//
+// 	msg := SmsCpMsg{
+// 		UserID:  user.ID(),
+// 		MsgText: text,
+// 		MsgTo:   to,
+// 		MsgFrom: from,
+// 	}
+//
+// 	status := db.conn.Create(&msg)
+// 	if status.Error != nil {
+// 		return nil, status.Error
+// 	}
+//
+// 	token, err := db.security.TokenCreate(jwt.MapClaims{"MsgID": msg.Model.ID})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	msg.token = token
+// 	msg.db = db
+//
+// 	return msg, nil
+// }
 
 func (db DB) UserLogin(username, plaintext string) (common.User, error) {
 	var user SmsCpUser
@@ -250,7 +319,7 @@ func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 	return note, nil
 }
 
-func (this DB) UserAll(user common.User) ([]common.Note, []common.Msg, error) {
+func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, error) {
 	// get notes
 	var dbnotes []SmsCpNote
 	status := this.conn.
@@ -258,7 +327,8 @@ func (this DB) UserAll(user common.User) ([]common.Note, []common.Msg, error) {
 		Order("id ASC").
 		Find(&dbnotes)
 	if status.Error != nil {
-		return nil, nil, status.Error
+		return nil, status.Error
+		// return nil, nil, status.Error
 	}
 
 	var notes []common.Note
@@ -267,22 +337,24 @@ func (this DB) UserAll(user common.User) ([]common.Note, []common.Msg, error) {
 		notes = append(notes, note)
 	}
 
-	// get msgs
-	var dbmsgs []SmsCpMsg
-	status = this.conn.
-		Where(&SmsCpMsg{UserID: user.ID()}).
-		Order("id ASC").
-		Find(&dbmsgs)
-	if status.Error != nil {
-		return nil, nil, status.Error
-	}
+	return notes, nil
 
-	var msgs []common.Note
-	for _, msg := range dbmsgs {
-		msgs = append(msgs, msg)
-	}
+	// // get msgs
+	// var dbmsgs []SmsCpMsg
+	// status = this.conn.
+	// 	Where(&SmsCpMsg{UserID: user.ID()}).
+	// 	Order("id ASC").
+	// 	Find(&dbmsgs)
+	// if status.Error != nil {
+	// 	return nil, nil, status.Error
+	// }
 
-	return notes, msgs, nil
+	// var msgs []common.Msg
+	// for _, msg := range dbmsgs {
+	// 	msgs = append(msgs, msg)
+	// }
+
+	// return notes, msgs, nil
 }
 
 func (this DB) UserDel(common.User) error {
@@ -290,17 +362,6 @@ func (this DB) UserDel(common.User) error {
 }
 
 // SmsCpUser class
-
-type SmsCpUser struct {
-	gorm.Model
-	UserUsername string `gorm:"unique;not null"`
-	UserPass     string `gorm:"not null"`
-	UserPhone    string `gorm:"unique;not null"`
-	UserNotes    []SmsCpNote
-	token        string
-	err          error
-	db           DB
-}
 
 func (SmsCpUser *SmsCpUser) Username() string { return SmsCpUser.UserUsername }
 func (SmsCpUser *SmsCpUser) Phone() string    { return SmsCpUser.UserPhone }
@@ -337,15 +398,6 @@ func (SmsCpUser *SmsCpUser) Save() error {
 
 // SmsCpNote class
 
-type SmsCpNote struct {
-	gorm.Model
-	NoteText  string `sql:"type:text"`
-	NoteShort string `gorm:"-"` /* ignore! */
-	UserID    uint
-	token     string
-	db        DB
-}
-
 func (SmsCpNote SmsCpNote) Short() string {
 	top := 50
 	if len(SmsCpNote.NoteText) > top {
@@ -357,3 +409,10 @@ func (SmsCpNote SmsCpNote) Short() string {
 func (SmsCpNote SmsCpNote) Text() string  { return SmsCpNote.NoteText }
 func (SmsCpNote SmsCpNote) ID() uint      { return SmsCpNote.Model.ID }
 func (SmsCpNote SmsCpNote) Token() string { return SmsCpNote.token }
+
+// SmsCpMsg class
+
+// func (SmsCpMsg SmsCpMsg) ID() uint      { return SmsCpMsg.Model.ID }
+// func (SmsCpMsg SmsCpMsg) Token() string { return SmsCpMsg.token }
+// func (SmsCpMsg SmsCpMsg) From() string  { return SmsCpMsg.MsgFrom }
+// func (SmsCpMsg SmsCpMsg) To() string    { return SmsCpMsg.MsgTo }

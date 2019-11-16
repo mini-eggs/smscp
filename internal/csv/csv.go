@@ -13,7 +13,7 @@ type CSV struct{}
 
 func Default() (this CSV) { return }
 
-func (this CSV) ToFile(user common.User, notes []common.Note, msgs []common.Msg) (*os.File, error) {
+func (this CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg */) (*os.File, error) {
 	file, err := os.Create("result.csv")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create csv file")
