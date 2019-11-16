@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"smscp.xyz/internal/api"
+	"smscp.xyz/internal/csv"
 	"smscp.xyz/internal/db"
 	"smscp.xyz/internal/security"
 	"smscp.xyz/internal/sms/twilio"
@@ -35,7 +36,8 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	security := security.Default(os.Getenv("JWT_SECRET"))
 	data := db.Default(databaseConn, security, os.Getenv("MIGRATION_KEY"))
 	data.SetMode(m)
-	app := api.AppDefault(data, sms)
+	csv := csv.Default()
+	app := api.AppDefault(data, sms, csv)
 
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
@@ -57,6 +59,10 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	router.POST("/cli/note/latest", app.NoteLatestCLI)
 
 	router.POST("/hook/sms/receive", app.HookSMS)
+
+	// gdpr
+	router.GET("/gdpr", app.UserExportAllData)
+	router.DELETE("/gdpr", app.UserDeleteAllData)
 
 	return router, nil
 }

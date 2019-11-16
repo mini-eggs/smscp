@@ -250,6 +250,45 @@ func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 	return note, nil
 }
 
+func (this DB) UserAll(user common.User) ([]common.Note, []common.Msg, error) {
+	// get notes
+	var dbnotes []SmsCpNote
+	status := this.conn.
+		Where(&SmsCpNote{UserID: user.ID()}).
+		Order("id ASC").
+		Find(&dbnotes)
+	if status.Error != nil {
+		return nil, nil, status.Error
+	}
+
+	var notes []common.Note
+	for _, note := range dbnotes {
+		note.NoteShort = note.Short() /* special case, bc in templates we can just call method */
+		notes = append(notes, note)
+	}
+
+	// get msgs
+	var dbmsgs []SmsCpMsg
+	status = this.conn.
+		Where(&SmsCpMsg{UserID: user.ID()}).
+		Order("id ASC").
+		Find(&dbmsgs)
+	if status.Error != nil {
+		return nil, nil, status.Error
+	}
+
+	var msgs []common.Note
+	for _, msg := range dbmsgs {
+		msgs = append(msgs, msg)
+	}
+
+	return notes, msgs, nil
+}
+
+func (this DB) UserDel(common.User) error {
+	return errors.New("not complete")
+}
+
 // SmsCpUser class
 
 type SmsCpUser struct {

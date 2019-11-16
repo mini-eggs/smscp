@@ -17,3 +17,6 @@ type Note interface {
 	Text() string
 	Token() string /* Unique per note (i.e. like an ID), only let author see. */
 }
+
+type Msg interface {
+}

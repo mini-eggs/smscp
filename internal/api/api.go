@@ -2,7 +2,9 @@ package api
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 type App struct {
 	data dataLayer
 	sms  smsLayer
+	csv  csvLayer
 }
 
 const (
@@ -24,15 +27,25 @@ const (
 )
 
 type dataLayer interface {
+	// user
 	UserGet(token string) (common.User, error)
 	UserGetByNumber(number string) (common.User, error)
 	UserLogin(username, pass string) (common.User, error)
 	UserCreate(username, pass, phone string) (common.User, error)
+	// notes
 	NoteGetList(user common.User, page, count int) ([]common.Note, bool, error)
 	NoteGetLatest(user common.User) (common.Note, error)
 	NoteGetLatestWithTime(user common.User, t time.Duration) (common.Note, error)
 	NoteCreate(user common.User, text string) (common.Note, error)
+	// special database
 	Migrate(key string) error
+	// special gdpr
+	UserAll(common.User) ([]common.Note, []common.Msg, error)
+	UserDel(common.User) error
+}
+
+type csvLayer interface {
+	ToFile(common.User, []common.Note, []common.Msg) (*os.File, error)
 }
 
 type smsLayer interface {
@@ -40,10 +53,11 @@ type smsLayer interface {
 	Hook(c *gin.Context) (number, text string, err error)
 }
 
-func AppDefault(data dataLayer, sms smsLayer) App {
+func AppDefault(data dataLayer, sms smsLayer, csv csvLayer) App {
 	return App{
 		data,
 		sms,
+		csv,
 	}
 }
 
@@ -456,4 +470,49 @@ func (app App) currentUserFromToken(token string) (common.User, error) {
 
 func (app App) error(c *gin.Context, err error) {
 	c.String(http.StatusInternalServerError, err.Error())
+}
+
+func (app App) UserExportAllData(c *gin.Context) {
+	user, err := app.currentUser(c)
+	if err != nil {
+		app.error(c, errors.New("no user"))
+		return
+	}
+
+	notes, messages, err := app.data.UserAll(user)
+	if err != nil {
+		app.error(c, errors.Wrap(err, "failed to retrieve user data"))
+		return
+	}
+
+	file, err := app.csv.ToFile(user, notes, messages)
+	if err != nil {
+		app.error(c, errors.Wrap(err, "failed to generate csv file export"))
+		return
+	}
+
+	byt, err := ioutil.ReadFile(file.Name())
+	if err != nil {
+		app.error(c, errors.Wrap(err, "failed to read csv file export"))
+		return
+	}
+
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=MyVerySpecial.csv")
+	c.String(http.StatusOK, string(byt))
+}
+
+func (app App) UserDeleteAllData(c *gin.Context) {
+	user, err := app.currentUser(c)
+	if err != nil {
+		app.error(c, errors.New("no user"))
+		return
+	}
+
+	if err := app.data.UserDel(user); err != nil {
+		app.error(c, errors.Wrap(err, "failed to delete user data"))
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/")
 }
