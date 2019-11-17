@@ -157,8 +157,7 @@ func (db DB) Migrate(key string) error {
 
 func (db DB) UserLogin(username, plaintext string) (common.User, error) {
 	var user SmsCpUser
-	status := db.conn.Where(&SmsCpUser{UserUsername: username}).First(&user)
-
+	status := db.conn.Where("user_username = ?", username).First(&user)
 	if status.Error != nil {
 		return nil, status.Error
 	}
@@ -202,6 +201,24 @@ func (db DB) UserGet(token string) (common.User, error) {
 func (db DB) UserGetByNumber(number string) (common.User, error) {
 	var user SmsCpUser
 	status := db.conn.Where("user_phone = ?", number).First(&user)
+	if status.Error != nil {
+		return nil, status.Error
+	}
+
+	token, err := db.security.TokenCreate(jwt.MapClaims{"UserID": user.Model.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	user.token = token
+	user.db = db
+
+	return &user, nil
+}
+
+func (db DB) UserGetByUsername(username string) (common.User, error) {
+	var user SmsCpUser
+	status := db.conn.Where("user_username = ?", username).First(&user)
 	if status.Error != nil {
 		return nil, status.Error
 	}

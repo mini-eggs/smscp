@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,7 +30,12 @@ func (sec Security) TokenCreate(val jwt.Claims) (string, error) {
 	return token.SignedString([]byte(sec.secret))
 }
 
-func (sec Security) TokenFrom(tokenString string) (jwt.MapClaims, error) {
+func (sec Security) TokenFrom(tokenString string) (_ret jwt.MapClaims, recoverErr error) {
+	defer func() {
+		if recover() != nil {
+			recoverErr = errors.New("bogus hash; hash has no value")
+		}
+	}()
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])

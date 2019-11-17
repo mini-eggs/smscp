@@ -40,7 +40,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM") /* data */)
 
 	csv := csv.Default()
-	app := api.AppDefault(data, sms, csv)
+	app := api.AppDefault(data, sms, csv, security)
 
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
@@ -52,6 +52,11 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	router.POST("/user/create", app.UserCreate)
 	router.POST("/user/update", app.UserUpdate)
 	router.POST("/user/logout", app.UserLogout)
+
+	// reset pass
+	router.POST("/user/forgot-password", app.UserForgotPassword)
+	router.GET("/reset/:hash", app.PageForgotPassword)
+	router.POST("/reset/:hash", app.UserForgotPasswordNewPassword)
 
 	router.POST("/note/create", app.NoteCreate)
 	router.GET("/note/list/:page", app.NoteListJSON)

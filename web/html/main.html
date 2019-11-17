@@ -636,12 +636,54 @@
                        focus:shadow-outline text-md'/>
               </div>
               <div class=''>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center">
                   <input class="bg-blue-500 hover:bg-blue-700 text-white
                          font-bold py-2 px-4 rounded shadow 
                          focus:outline-none focus:shadow-outline text-md"
                          value='Login'
                          type="submit"/>
+                  <button class='ml-5 text-gray-500 hover:text-gray-700'
+                          id='forgot-password-btn'>
+                    forgot password
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+          </form>
+
+          <form action='/user/forgot-password' 
+                id='forgot-password'
+                method='POST' 
+                class='hidden w-full h-full bg-white shadow-md pt-6 pb-10 rounded px-10'>
+            <fieldset>
+              <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                Forgot password
+              </legend>
+              <div class='mb-5'>
+                <label class='block text-grey-700 text-sm font-bold mb-2'
+                       for='login-username'>
+                  Username
+                </label>
+                <input type='text' 
+                       required 
+                       placeholder='Username' 
+                       id='login-username'
+                       name='Username'
+                       class='shadow appearance-none border rounded w-full py-2 px-3
+                       text-grey-700 leading-tight focus:outline-none
+                       focus:shadow-outline text-md' />
+              </div>
+              <div class=''>
+                <div class="flex items-center">
+                  <input class="bg-blue-500 hover:bg-blue-700 text-white
+                         font-bold py-2 px-4 rounded shadow 
+                         focus:outline-none focus:shadow-outline text-md"
+                         value='Submit'
+                         type="submit"/>
+                  <button class='ml-5 text-gray-500 hover:text-gray-700'
+                          id='login-btn'>
+                    login
+                  </button>
                 </div>
               </div>
             </fieldset>
@@ -835,6 +877,24 @@
         var maskedInputController = vanillaTextMask.maskInput({
           inputElement: elements[e],
           mask: phoneMask
+        });
+      }
+    })();
+    // forgot password + login click events
+    (function() {
+      var lbtn = document.getElementById('login-btn');
+      var lform = document.getElementById('login');
+      var fbtn = document.getElementById('forgot-password-btn');
+      var fform = document.getElementById('forgot-password');
+      events(lbtn, lform, fform);
+      events(fbtn, fform, lform);
+      function events(btn, enable, disable) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          enable.classList.remove('hidden');
+          disable.classList.add('hidden');
+          enable.querySelector('input').focus();
         });
       }
     })();

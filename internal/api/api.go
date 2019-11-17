@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -20,6 +21,12 @@ type App struct {
 	data dataLayer
 	sms  smsLayer
 	csv  csvLayer
+	sec  securityLayer
+	cfg  cfg
+}
+
+type cfg struct {
+	resetPassswordLink string
 }
 
 const (
@@ -31,6 +38,7 @@ type dataLayer interface {
 	// user
 	UserGet(token string) (common.User, error)
 	UserGetByNumber(number string) (common.User, error)
+	UserGetByUsername(username string) (common.User, error)
 	UserLogin(username, pass string) (common.User, error)
 	UserCreate(username, pass, phone string) (common.User, error)
 	// notes
@@ -54,11 +62,18 @@ type smsLayer interface {
 	Hook(c *gin.Context) (number, text string, err error)
 }
 
-func AppDefault(data dataLayer, sms smsLayer, csv csvLayer) App {
+type securityLayer interface {
+	TokenCreate(val jwt.Claims) (string, error)
+	TokenFrom(tokenString string) (jwt.MapClaims, error)
+}
+
+func AppDefault(data dataLayer, sms smsLayer, csv csvLayer, sec securityLayer) App {
 	return App{
 		data,
 		sms,
 		csv,
+		sec,
+		cfg{"https://smscp.xyz/reset/%s"},
 	}
 }
 
@@ -513,6 +528,98 @@ func (app App) UserDeleteAllData(c *gin.Context) {
 
 	if err := app.data.UserDel(user); err != nil {
 		app.error(c, errors.Wrap(err, "failed to delete user data"))
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/")
+}
+
+func (app App) UserForgotPassword(c *gin.Context) {
+	var payload struct{ Username string }
+	if err := c.Bind(&payload); err != nil {
+		app.error(c, errors.Wrap(err, "failed to retreive username provided"))
+		return
+	}
+
+	user, err := app.data.UserGetByUsername(payload.Username)
+	if err != nil {
+		app.error(c, errors.Wrap(err, "no user"))
+		return
+	}
+
+	token, err := app.sec.TokenCreate(jwt.MapClaims{
+		"UserToken": user.Token(),
+		"Time":      time.Now().Unix(),
+	})
+	if err != nil {
+		app.error(c, errors.Wrap(err, "failed to create magic link"))
+		return
+	}
+
+	msg := `Please visit the link below to reset your password.
+
+`
+
+	err = app.sms.Send(user.Phone(), msg+fmt.Sprintf(app.cfg.resetPassswordLink, token))
+	if err != nil {
+		app.error(c, errors.Wrap(err, "failed to send sms"))
+		return
+	}
+
+	c.Redirect(http.StatusTemporaryRedirect, "/")
+}
+
+func (app App) PageForgotPassword(c *gin.Context) {
+	c.HTML(http.StatusOK, "forgot-password.html", gin.H{"HasUser": false})
+}
+
+func (app App) UserForgotPasswordNewPassword(c *gin.Context) {
+	var payload struct{ Password, Verify string }
+	if err := c.Bind(&payload); err != nil {
+		app.error(c, errors.Wrap(err, "failed to retreive form payload"))
+		return
+	}
+
+	if payload.Password != payload.Verify || payload.Password == "" {
+		app.error(c, errors.New("invalid password; either not equal or no password entered"))
+		return
+	}
+
+	data, err := app.sec.TokenFrom(c.Param("hash"))
+	if err := c.Bind(&payload); err != nil {
+		app.error(c, errors.Wrap(err, "could not read magic link"))
+		return
+	}
+
+	// TODO: Check how old this token is.
+	tokenData, ok := data["UserToken"]
+	if !ok {
+		app.error(c, errors.Wrap(err, "could not read magic link; no user token"))
+		return
+	}
+
+	tokenStr, ok := tokenData.(string)
+	if !ok {
+		app.error(c, errors.Wrap(err, "could not read magic link; invalid user token"))
+		return
+	}
+
+	user, err := app.currentUserFromToken(tokenStr)
+	if err != nil {
+		app.error(c, errors.Wrap(err, "this token does not represent a user; broken token"))
+		return
+	}
+
+	user.SetPass(payload.Password)
+	if err := user.Save(); err != nil {
+		app.error(c, errors.Wrap(err, "failed to update password"))
+		return
+	}
+
+	s := sessions.Default(c)
+	s.Set(sessionKeyUserToken, user.Token())
+	if err := s.Save(); err != nil {
+		app.error(c, err)
 		return
 	}
 
