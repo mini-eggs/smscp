@@ -2,6 +2,9 @@ package csv
 
 import (
 	stdcsv "encoding/csv"
+	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -10,14 +13,17 @@ import (
 
 type CSV struct{}
 
-func Default() (this CSV) { return }
+func Default() (csv CSV) { return }
 
-func (this CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg */) (*os.File, error) {
-	file, err := os.Create("/tmp/result.csv")
+func (csv CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg */) (*os.File, error) {
+	file, err := ioutil.TempFile("", fmt.Sprintf("%s_results.csv", url.QueryEscape(user.Username())))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create csv file")
 	}
-	defer file.Close()
+	defer func() {
+		file.Close()
+		os.Remove(file.Name())
+	}()
 
 	writer := stdcsv.NewWriter(file)
 	defer writer.Flush()

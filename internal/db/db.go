@@ -339,10 +339,10 @@ func (db DB) NoteCreate(user common.User, text string) (common.Note, error) {
 	return note, nil
 }
 
-func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, error) {
+func (db DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, error) {
 	// get notes
 	var dbnotes []SmsCpNote
-	status := this.conn.
+	status := db.conn.
 		Where(&SmsCpNote{UserID: user.ID()}).
 		Order("id ASC").
 		Find(&dbnotes)
@@ -355,7 +355,7 @@ func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, er
 	for _, note := range dbnotes {
 		note.NoteShort = note.Short() /* special case, bc in templates we can just call method */
 
-		token, err := this.security.TokenCreate(jwt.MapClaims{"NoteID": note.Model.ID})
+		token, err := db.security.TokenCreate(jwt.MapClaims{"NoteID": note.Model.ID})
 		if err != nil {
 			return nil, err
 		}
@@ -385,9 +385,9 @@ func (this DB) UserAll(user common.User) ([]common.Note /* []common.Msg,  */, er
 	// return notes, msgs, nil
 }
 
-func (this DB) UserDel(user common.User) error {
+func (db DB) UserDel(user common.User) error {
 	// delete notes
-	status := this.conn.
+	status := db.conn.
 		Where(&SmsCpNote{UserID: user.ID()}).
 		Unscoped(). // Perm delete.
 		Delete(&SmsCpNote{})
@@ -396,7 +396,7 @@ func (this DB) UserDel(user common.User) error {
 	}
 
 	// delete user
-	status = this.conn.
+	status = db.conn.
 		Unscoped(). // Perm delete.
 		Delete(&SmsCpUser{Model: gorm.Model{ID: user.ID()}})
 	if status.Error != nil {
