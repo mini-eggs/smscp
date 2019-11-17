@@ -549,7 +549,7 @@ func (app App) UserForgotPassword(c *gin.Context) {
 
 	token, err := app.sec.TokenCreate(jwt.MapClaims{
 		"UserToken": user.Token(),
-		"Time":      time.Now().Unix(),
+		"Time":      time.Now().UTC().Format(time.UnixDate),
 	})
 	if err != nil {
 		app.error(c, errors.Wrap(err, "failed to create magic link"))
@@ -586,21 +586,43 @@ func (app App) UserForgotPasswordNewPassword(c *gin.Context) {
 	}
 
 	data, err := app.sec.TokenFrom(c.Param("hash"))
-	if err := c.Bind(&payload); err != nil {
+	if err != nil {
 		app.error(c, errors.Wrap(err, "could not read magic link"))
 		return
 	}
 
-	// TODO: Check how old this token is.
+	timeData, ok := data["Time"]
+	if !ok {
+		app.error(c, errors.New("could not read magic link; no time value"))
+		return
+	}
+
+	timeStr, ok := timeData.(string)
+	if !ok {
+		app.error(c, errors.New("could not read magic link; invalid time type"))
+		return
+	}
+
+	t, err := time.Parse(time.UnixDate, timeStr)
+	if err != nil {
+		app.error(c, errors.Wrap(err, "could not read magic link; invalid time value"))
+		return
+	}
+
+	if t.Add(5 * time.Minute).Before(time.Now().UTC()) {
+		app.error(c, errors.New("this link has expired; may not reset password here"))
+		return
+	}
+
 	tokenData, ok := data["UserToken"]
 	if !ok {
-		app.error(c, errors.Wrap(err, "could not read magic link; no user token"))
+		app.error(c, errors.New("could not read magic link; no user token"))
 		return
 	}
 
 	tokenStr, ok := tokenData.(string)
 	if !ok {
-		app.error(c, errors.Wrap(err, "could not read magic link; invalid user token"))
+		app.error(c, errors.New("could not read magic link; invalid user token"))
 		return
 	}
 
