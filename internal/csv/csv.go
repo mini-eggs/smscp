@@ -20,10 +20,7 @@ func (csv CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create csv file")
 	}
-	defer func() {
-		file.Close()
-		os.Remove(file.Name())
-	}()
+	defer file.Close()
 
 	writer := stdcsv.NewWriter(file)
 	defer writer.Flush()

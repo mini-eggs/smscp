@@ -512,6 +512,7 @@ func (app App) UserExportAllData(c *gin.Context) {
 		app.error(c, errors.Wrap(err, "failed to read csv file export"))
 		return
 	}
+	defer os.Remove(file.Name()) // cleanup file
 
 	filename := fmt.Sprintf("%s_user_data.csv", url.QueryEscape(user.Username()))
 	c.Header("Content-Type", "text/csv")
