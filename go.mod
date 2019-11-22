@@ -3,8 +3,8 @@ module smscp.xyz
 go 1.13
 
 require (
+	cloud.google.com/go v0.37.4
 	github.com/Pallinder/go-randomdata v1.2.0
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/sessions v0.0.1
 	github.com/gin-gonic/gin v1.4.0
@@ -20,5 +20,6 @@ require (
 	github.com/urfave/cli v1.22.1
 	golang.org/x/crypto v0.0.0-20191111213947-16651526fdb4
 	golang.org/x/exp v0.0.0-20190121172915-509febef88a4
+	google.golang.org/api v0.3.1
 	gopkg.in/go-playground/assert.v1 v1.2.1
 )

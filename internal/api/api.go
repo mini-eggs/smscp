@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,11 +19,12 @@ import (
 )
 
 type App struct {
-	data dataLayer
-	sms  smsLayer
-	csv  csvLayer
-	sec  securityLayer
-	cfg  cfg
+	data  dataLayer
+	data2 fsDataLayer
+	sms   smsLayer
+	csv   csvLayer
+	sec   securityLayer
+	cfg   cfg
 }
 
 type cfg struct {
@@ -53,6 +55,11 @@ type dataLayer interface {
 	UserDel(common.User) error
 }
 
+type fsDataLayer interface {
+	UserLogin(ctx context.Context, username, pass string) (common.User2, error)
+	UserCreate(ctx context.Context, username, pass, phone string) (common.User2, error)
+}
+
 type csvLayer interface {
 	ToFile(common.User, []common.Note /* []common.Msg */) (*os.File, error)
 }
@@ -67,9 +74,10 @@ type securityLayer interface {
 	TokenFrom(tokenString string) (jwt.MapClaims, error)
 }
 
-func AppDefault(data dataLayer, sms smsLayer, csv csvLayer, sec securityLayer) App {
+func AppDefault(data dataLayer, data2 fsDataLayer, sms smsLayer, csv csvLayer, sec securityLayer) App {
 	return App{
 		data,
+		data2,
 		sms,
 		csv,
 		sec,
@@ -204,6 +212,13 @@ func (app App) UserLogin(c *gin.Context) {
 		return
 	}
 
+	fsUser, err := app.data2.UserLogin(c, payload.Username, payload.Password)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+	_ = fsUser
+
 	s := sessions.Default(c)
 	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
@@ -265,6 +280,13 @@ func (app App) UserCreate(c *gin.Context) {
 		app.error(c, err)
 		return
 	}
+
+	fsUser, err := app.data2.UserCreate(c, payload.Username, payload.Password, full)
+	if err != nil {
+		app.error(c, err)
+		return
+	}
+	_ = fsUser
 
 	s := sessions.Default(c)
 	s.Set(sessionKeyUserToken, user.Token())

@@ -3,3 +3,4 @@ now.json
 gin-bin
 dl
 .loader.io
+application_default_credentials.json
