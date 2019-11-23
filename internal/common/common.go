@@ -24,3 +24,15 @@ type Note interface {
 // 	From() string
 // 	To() string
 // }
+
+// Temp, for firestore rewrite.
+type User2 interface {
+	ID() string
+	Username() string
+	Phone() string
+	Token() string /* Stored in session, secret, unique per session. */
+	SetUsername(string)
+	SetPass(string)
+	SetPhone(string)
+	Save() error
+}

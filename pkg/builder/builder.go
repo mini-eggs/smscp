@@ -6,6 +6,7 @@ import (
 	"smscp.xyz/internal/api"
 	"smscp.xyz/internal/csv"
 	"smscp.xyz/internal/db"
+	"smscp.xyz/internal/db/fs"
 	"smscp.xyz/internal/security"
 	"smscp.xyz/internal/sms/twilio"
 	"smscp.xyz/pkg/mode"
@@ -37,10 +38,13 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	data := db.Default(databaseConn, security, os.Getenv("MIGRATION_KEY"))
 	data.SetMode(m)
 
+	// For firestore rewrite, temp.
+	data2 := fs.Default(os.Getenv("GOOGLE_PROJECT_ID"), security)
+
 	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM") /* data */)
 
 	csv := csv.Default()
-	app := api.AppDefault(data, sms, csv, security)
+	app := api.AppDefault(data, data2, sms, csv, security)
 
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
