@@ -56,8 +56,22 @@ type dataLayer interface {
 }
 
 type fsDataLayer interface {
+	// user
+	UserGet(ctx context.Context, token string) (common.User2, error)
+	UserGetByNumber(ctx context.Context, number string) (common.User2, error)
+	UserGetByUsername(ctx context.Context, username string) (common.User2, error)
 	UserLogin(ctx context.Context, username, pass string) (common.User2, error)
 	UserCreate(ctx context.Context, username, pass, phone string) (common.User2, error)
+	// notes
+	NoteGetList(ctx context.Context, user common.User2, page, count int) ([]common.Note2, bool, error)
+	NoteGetLatest(ctx context.Context, user common.User2) (common.Note2, error)
+	NoteGetLatestWithTime(ctx context.Context, user common.User2, t time.Duration) (common.Note2, error)
+	NoteCreate(ctx context.Context, user common.User2, text string) (common.Note2, error)
+	// special database
+	// Migrate(key string) error // Don't need!
+	// special gdpr
+	UserAll(context.Context, common.User2) ([]common.Note2, error)
+	UserDel(context.Context, common.User2) error
 }
 
 type csvLayer interface {

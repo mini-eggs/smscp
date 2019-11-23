@@ -1,5 +1,7 @@
 package common
 
+import "context"
+
 type User interface {
 	ID() uint
 	Username() string
@@ -18,14 +20,8 @@ type Note interface {
 	Token() string /* Unique per note (i.e. like an ID), only let author see. */
 }
 
-// type Msg interface {
-// 	ID() uint
-// 	Token() string /* Unique per msg (i.e. like an ID), only let author see. */
-// 	From() string
-// 	To() string
-// }
-
 // Temp, for firestore rewrite.
+
 type User2 interface {
 	ID() string
 	Username() string
@@ -34,5 +30,12 @@ type User2 interface {
 	SetUsername(string)
 	SetPass(string)
 	SetPhone(string)
-	Save() error
+	Save(context.Context) error
+}
+
+type Note2 interface {
+	ID() string
+	Short() string
+	Text() string
+	Token() string /* Unique per note (i.e. like an ID), only let author see. */
 }

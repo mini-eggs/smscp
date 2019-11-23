@@ -447,7 +447,7 @@ func (SmsCpNote SmsCpNote) Short() string {
 	top := 50
 	str := utf8string.NewString(SmsCpNote.NoteText)
 	if str.RuneCount() > top {
-		return str.Slice(0, top)
+		return str.Slice(0, top) + "..."
 	}
 	return str.String()
 }
