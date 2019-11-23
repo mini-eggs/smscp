@@ -80,6 +80,7 @@ func (fs fs) toshort(text string) string {
 // public
 
 func (fs fs) Middleware(c *gin.Context) {
+	// Firestore connection per request.
 	client, err := firestore.NewClient(c, fs.firestoreProjectID)
 	if err != nil {
 		// Error will be caught later.
@@ -527,15 +528,7 @@ type Note struct {
 	fs    fs
 }
 
-func (Note Note) Short() string {
-	top := 50
-	str := utf8string.NewString(Note.NoteText)
-	if str.RuneCount() > top {
-		return str.Slice(0, top) + "..."
-	}
-	return str.String()
-}
-
+func (Note Note) Short() string { return Note.NoteShort }
 func (Note Note) Text() string  { return Note.NoteText }
 func (Note Note) ID() string    { return Note.ref.ID }
 func (Note Note) Token() string { return Note.token }
