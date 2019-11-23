@@ -20,7 +20,7 @@ type securityLayer interface {
 	TokenFrom(tokenString string) (jwt.MapClaims, error)
 }
 
-type fs struct {
+type FS struct {
 	firestoreProjectID string
 	sec                securityLayer
 }
@@ -29,13 +29,13 @@ const (
 	keyConn = "FIRESTORE_CONNECTION_KEY"
 )
 
-func Default(firestoreProjectID string, sec securityLayer) fs {
-	return fs{firestoreProjectID, sec}
+func Default(firestoreProjectID string, sec securityLayer) FS {
+	return FS{firestoreProjectID, sec}
 }
 
 // private
 
-func (fs fs) getconn(ctx context.Context) (*firestore.Client, error) {
+func (fs FS) getconn(ctx context.Context) (*firestore.Client, error) {
 	val, ok := ctx.Value(keyConn).(*firestore.Client)
 	if !ok {
 		return nil, errors.New("database connection has not begun")
@@ -43,7 +43,7 @@ func (fs fs) getconn(ctx context.Context) (*firestore.Client, error) {
 	return val, nil
 }
 
-func (fs fs) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (common.User, error) {
+func (fs FS) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (common.User, error) {
 	user := User{ref: doc.Ref}
 	if err := doc.DataTo(&user); err != nil {
 		return nil, errors.Wrap(err, "user value corrupted")
@@ -60,7 +60,7 @@ func (fs fs) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (c
 	return &user, nil
 }
 
-func (fs fs) itertouser(ctx context.Context, iter *firestore.DocumentIterator) (common.User, error) {
+func (fs FS) itertouser(ctx context.Context, iter *firestore.DocumentIterator) (common.User, error) {
 	doc, err := iter.Next()
 	if err != nil {
 		return nil, errors.New("failed to find user")
@@ -68,7 +68,7 @@ func (fs fs) itertouser(ctx context.Context, iter *firestore.DocumentIterator) (
 	return fs.snaptouser(ctx, doc)
 }
 
-func (fs fs) toshort(text string) string {
+func (fs FS) toshort(text string) string {
 	top := 50
 	str := utf8string.NewString(text)
 	if str.RuneCount() > top {
@@ -79,7 +79,7 @@ func (fs fs) toshort(text string) string {
 
 // public
 
-func (fs fs) Middleware(c *gin.Context) {
+func (fs FS) Middleware(c *gin.Context) {
 	// Firestore connection per request.
 	client, err := firestore.NewClient(c, fs.firestoreProjectID)
 	if err != nil {
@@ -92,7 +92,7 @@ func (fs fs) Middleware(c *gin.Context) {
 	defer client.Close()
 }
 
-func (fs fs) UserAll(ctx context.Context, user common.User) ([]common.Note, error) {
+func (fs FS) UserAll(ctx context.Context, user common.User) ([]common.Note, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (fs fs) UserAll(ctx context.Context, user common.User) ([]common.Note, erro
 	return ret, nil
 }
 
-func (fs fs) UserDel(ctx context.Context, user common.User) error {
+func (fs FS) UserDel(ctx context.Context, user common.User) error {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func (fs fs) UserDel(ctx context.Context, user common.User) error {
 	return nil
 }
 
-func (fs fs) NoteGetLatest(ctx context.Context, user common.User) (common.Note, error) {
+func (fs FS) NoteGetLatest(ctx context.Context, user common.User) (common.Note, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func (fs fs) NoteGetLatest(ctx context.Context, user common.User) (common.Note, 
 	return &note, nil
 }
 
-func (fs fs) NoteGetLatestWithTime(ctx context.Context, user common.User, t time.Duration) (common.Note, error) {
+func (fs FS) NoteGetLatestWithTime(ctx context.Context, user common.User, t time.Duration) (common.Note, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (fs fs) NoteGetLatestWithTime(ctx context.Context, user common.User, t time
 	return &note, nil
 }
 
-func (fs fs) NoteGetList(ctx context.Context, user common.User, page, count int) ([]common.Note, bool, error) {
+func (fs FS) NoteGetList(ctx context.Context, user common.User, page, count int) ([]common.Note, bool, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, false, err
@@ -297,7 +297,7 @@ func (fs fs) NoteGetList(ctx context.Context, user common.User, page, count int)
 	return ret, hasMore, nil
 }
 
-func (fs fs) NoteCreate(ctx context.Context, user common.User, text string) (common.Note, error) {
+func (fs FS) NoteCreate(ctx context.Context, user common.User, text string) (common.Note, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -327,7 +327,7 @@ func (fs fs) NoteCreate(ctx context.Context, user common.User, text string) (com
 	return &note, nil
 }
 
-func (fs fs) UserGet(ctx context.Context, token string) (common.User, error) {
+func (fs FS) UserGet(ctx context.Context, token string) (common.User, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func (fs fs) UserGet(ctx context.Context, token string) (common.User, error) {
 	return fs.snaptouser(ctx, snap)
 }
 
-func (fs fs) UserGetByNumber(ctx context.Context, phone string) (common.User, error) {
+func (fs FS) UserGetByNumber(ctx context.Context, phone string) (common.User, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -362,7 +362,7 @@ func (fs fs) UserGetByNumber(ctx context.Context, phone string) (common.User, er
 	return fs.itertouser(ctx, iter)
 }
 
-func (fs fs) UserGetByUsername(ctx context.Context, username string) (common.User, error) {
+func (fs FS) UserGetByUsername(ctx context.Context, username string) (common.User, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -373,7 +373,7 @@ func (fs fs) UserGetByUsername(ctx context.Context, username string) (common.Use
 	return fs.itertouser(ctx, iter)
 }
 
-func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.User, error) {
+func (fs FS) UserLogin(ctx context.Context, username, plaintext string) (common.User, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -407,7 +407,7 @@ func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.
 	return &user, nil
 }
 
-func (fs fs) UserCreate(ctx context.Context, username, plaintext, phone string) (common.User, error) {
+func (fs FS) UserCreate(ctx context.Context, username, plaintext, phone string) (common.User, error) {
 	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
@@ -468,7 +468,7 @@ type User struct {
 
 	// Set when retrieved:
 	token string
-	fs    fs
+	fs    FS
 
 	// Set while updating
 	err error
@@ -476,37 +476,37 @@ type User struct {
 
 func (user *User) Username() string { return user.UserUsername }
 func (user *User) Phone() string    { return user.UserPhone }
-func (User *User) ID() string       { return User.ref.ID }
-func (User *User) Token() string    { return User.token }
+func (user *User) ID() string       { return user.ref.ID }
+func (user *User) Token() string    { return user.token }
 
-func (User *User) SetUsername(value string) { User.UserUsername = value }
-func (User *User) SetPhone(value string)    { User.UserPhone = value }
+func (user *User) SetUsername(value string) { user.UserUsername = value }
+func (user *User) SetPhone(value string)    { user.UserPhone = value }
 
-func (User *User) SetPass(plaintext string) {
-	if User.err != nil {
+func (user *User) SetPass(plaintext string) {
+	if user.err != nil {
 		return
 	}
 
-	pass, err := User.fs.sec.HashCreate(User.ref.ID + plaintext)
+	pass, err := user.fs.sec.HashCreate(user.ref.ID + plaintext)
 	if err != nil {
-		User.err = err
+		user.err = err
 		return
 	}
 
-	User.UserEncryptedPassword = pass
+	user.UserEncryptedPassword = pass
 }
 
-func (User *User) Save(ctx context.Context) error {
-	if User.err != nil {
-		return User.err
+func (user *User) Save(ctx context.Context) error {
+	if user.err != nil {
+		return user.err
 	}
 
-	conn, err := User.fs.getconn(ctx)
+	conn, err := user.fs.getconn(ctx)
 	if err != nil {
 		return err
 	}
 
-	if _, err = conn.Collection("users").Doc(User.ID()).Set(ctx, User); err != nil {
+	if _, err = conn.Collection("users").Doc(user.ID()).Set(ctx, user); err != nil {
 		return errors.Wrap(err, "failed to update user")
 	}
 
@@ -526,7 +526,7 @@ type Note struct {
 
 	// Set when retrieved:
 	token string
-	fs    fs
+	fs    FS
 }
 
 func (Note Note) Short() string { return Note.NoteShort }

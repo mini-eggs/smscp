@@ -49,7 +49,7 @@ func badNote() url.Values {
 func goodUser() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
-	form.Add("Username", randomdata.SillyName())
+	form.Add("Username", "__test__"+randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass)
 	form.Add("Phone", fmt.Sprintf("(208) %d-%d", randomdata.Number(100, 999), randomdata.Number(1000, 9999)))
@@ -60,7 +60,7 @@ func badUserPass() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
 	pass2 := randomdata.SillyName()
-	form.Add("Username", randomdata.SillyName())
+	form.Add("Username", "__test__"+randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass2)
 	form.Add("Phone", fmt.Sprintf("(208) %d-%d", randomdata.Number(100, 999), randomdata.Number(1000, 9999)))
@@ -70,7 +70,7 @@ func badUserPass() url.Values {
 func badUserPhone() url.Values {
 	form := url.Values{}
 	pass := randomdata.SillyName()
-	form.Add("Username", randomdata.SillyName())
+	form.Add("Username", "__test__"+randomdata.SillyName())
 	form.Add("Password", pass)
 	form.Add("Verify", pass)
 	form.Add("Phone", randomdata.PhoneNumber()) // unsupported national
