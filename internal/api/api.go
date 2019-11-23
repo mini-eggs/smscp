@@ -475,7 +475,10 @@ func (app App) currentUserFromToken(ctx context.Context, token string) (common.U
 }
 
 func (app App) error(c *gin.Context, err error) {
-	c.String(http.StatusInternalServerError, err.Error())
+	// c.String(http.StatusInternalServerError, err.Error())
+	c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+		"Error": err.Error(),
+	})
 }
 
 func (app App) UserExportAllData(c *gin.Context) {

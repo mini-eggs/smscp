@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset=utf-8>
+  <title>smscp</title>
+  <meta name=description content="The easiest way to copy text to and from your cell phone and computing machines.">
+  <!--
+  <meta name="twitter:site" content="https://smscp.xyz/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="smscp" />
+  <meta name="twitter:description" content="The easiest way to copy text to and from your cell phone and computing machines." />
+  <meta name="twitter:image:src" content="https://i.imgur.com/4ibpo8Q.png" />
+  -->
+  <meta name=viewport content="width=device-width,minimum-scale=1,maximum-scale=5">
+  <link rel=icon href="https://evanjon.es/static/img/favicon.ico" type="image/x-icon">
+</head>
+<body class='bg-gray-700'>
+  <style>
+    {{ template "tailwind.min.css" }}
+
+    header {
+      min-height: 300px;
+      height: 35vh;
+      max-height: 500px;
+    }
+
+    @media (max-width: 768px) { 
+      header {
+        min-height: 350px;
+      }
+    }
+
+    header > span > i,
+    aside > span > i,
+    footer > span > i,
+    #bg-spacer > span > i {
+      width: 0; 
+      height: 0; 
+      border-top: 100px solid transparent;
+      border-right: 100vw solid #f7fafc;
+    }
+
+
+    aside > span:first-of-type > i {
+      border-right: 100vw solid #63b3ed;
+    }
+
+    aside > span:first-of-type,
+    footer > span:first-of-type,
+    #bg-spacer > span:last-of-type {
+      margin-top: -100px;
+    }
+
+    aside > span:last-of-type > i,
+    footer > span:last-of-type > i {
+      border-right: 100vw solid #4a5568;
+    }
+
+    #bg-spacer > span:last-of-type > i {
+      border-right: 100vw solid #bee3f8;
+    }
+
+    header > div {
+      background: linear-gradient(90deg,#51cefc,rgba(32,159,255,0));
+    }
+
+    @media (min-width: 768px) { 
+      header #tagline {
+        top: 50%;
+        transform: translateY(-50%);
+      }
+    }
+
+    main {
+      margin-bottom: -350px !important;
+    }
+
+    button, input[type='submit'] {
+      cursor: pointer;
+    }
+
+    video {
+      background-size: cover;
+    }
+
+    pre {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch; 
+    }
+
+    #notes > div > div > span {
+      max-width: 5rem;
+    }
+    @media (min-width: 640px) { 
+      #notes > div > div > span {
+        max-width: 10rem;
+      }
+    }
+    @media (min-width: 768px) {
+      #notes > div > div > span {
+        max-width: 20rem;
+      }
+    }
+
+  </style>
+
+  <header class='relative bg-blue-900'>
+
+    <span class='overflow-hidden z-20 absolute top-0 w-full h-full'>
+      <i class='absolute bottom-0 w-full'></i>
+    </span>
+
+    <div class='overflow-hidden absolute top-0 left-0 h-full w-full'>
+      <video class='absolute top-0 left-0 h-full w-full object-cover z-0' 
+             autoplay loop playsinline muted
+             poster="/static/image/poster-min.png">
+        <source src="/static/video/hero-min.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <div class='z-10 absolute top-0 left-0 h-full w-full'></div>
+
+    <span class='z-30 absolute bottom-0 left-0 w-full'>
+      <div class='mx-5 lg:mx-0 -mb-5'>
+        <div class='bg-white shadow-xl rounded max-w-4xl mx-auto p-5 pt-0'>
+          <h1 class='text-5xl sm:text-6xl font-black text-gray-700'>
+            Error
+          </h1> 
+          <h2 class="text-2xl text-gray-600">
+            {{ .Error }}
+          </h2> 
+        </div>
+      </div>
+    </span>
+
+  </header>
+
+  <footer class="relative bg-gray-700 text-gray-100 px-2 pt-0 pb-2 mt-0">
+    <span class='overflow-hidden z-20 absolute top-0 left-0 w-full h-full'>
+      <i class='absolute top-0 w-full'></i>
+    </span>
+		<div class="relative z-30 container mx-auto py-8">
+			<div class="flex flex-wrap mb-2 px-4">
+				<div class="w-full md:w-1/3 text-center md:text-left px-3 sm:px-1 mb-2 md:mb-0 pb-3 sm:pb-0">
+					<p class="pt-6"></p>
+				</div>
+			</div>
+		</div>
+	</footer>
+
+</body>
+</html>
