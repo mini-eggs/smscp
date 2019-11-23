@@ -2,11 +2,11 @@ package fs
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/utf8string"
 	"google.golang.org/api/iterator"
@@ -35,26 +35,15 @@ func Default(firestoreProjectID string, sec securityLayer) fs {
 
 // private
 
-func (fs fs) getconn(ctx *context.Context) (*firestore.Client, error) {
-	val, ok := (*ctx).Value(keyConn).(*firestore.Client)
+func (fs fs) getconn(ctx context.Context) (*firestore.Client, error) {
+	val, ok := ctx.Value(keyConn).(*firestore.Client)
 	if !ok {
-		// TODO: Make sure we're not setting up multiple times.
-		fmt.Println("SETTING UP FIRESTORE")
-
-		client, err := firestore.NewClient((*ctx), fs.firestoreProjectID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to connect to database; check if GOOGLE_APPLICATION_CREDENTIALS is set.")
-		}
-
-		*ctx = context.WithValue((*ctx), keyConn, client)
-
-		return client, nil
+		return nil, errors.New("database connection has not begun")
 	}
-
 	return val, nil
 }
 
-func (fs fs) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (common.User2, error) {
+func (fs fs) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (common.User, error) {
 	user := User{ref: doc.Ref}
 	if err := doc.DataTo(&user); err != nil {
 		return nil, errors.Wrap(err, "user value corrupted")
@@ -71,7 +60,7 @@ func (fs fs) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (c
 	return &user, nil
 }
 
-func (fs fs) itertouser(ctx context.Context, iter *firestore.DocumentIterator) (common.User2, error) {
+func (fs fs) itertouser(ctx context.Context, iter *firestore.DocumentIterator) (common.User, error) {
 	doc, err := iter.Next()
 	if err != nil {
 		return nil, errors.New("failed to find user")
@@ -89,23 +78,33 @@ func (fs fs) toshort(text string) string {
 }
 
 // public
-func (fs fs) UserAll(ctx context.Context, user common.User2) ([]common.Note2, error) {
-	conn, err := fs.getconn(&ctx)
+
+func (fs fs) Middleware(c *gin.Context) {
+	client, err := firestore.NewClient(c, fs.firestoreProjectID)
+	if err != nil {
+		// Error will be caught later.
+		c.Next()
+		return
+	}
+	c.Set(keyConn, client)
+	c.Next()
+	defer client.Close()
+}
+
+func (fs fs) UserAll(ctx context.Context, user common.User) ([]common.Note, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	iter := conn.Collection("notes").
-		Where("UserId", "==", user.ID()).
+		Where("UserID", "==", user.ID()).
+		OrderBy("NoteCreatedAt", firestore.Desc).
 		Documents(ctx)
 	defer iter.Stop()
 
-	var ret []common.Note2
-	i := 0
-
+	var ret []common.Note
 	for {
-		i++ // TODO: first or last?
-
 		doc, err := iter.Next()
 		if err == iterator.Done {
 			break
@@ -127,13 +126,15 @@ func (fs fs) UserAll(ctx context.Context, user common.User2) ([]common.Note2, er
 
 		note.token = token
 		note.fs = fs
+
+		ret = append(ret, note)
 	}
 
 	return ret, nil
 }
 
-func (fs fs) UserDel(ctx context.Context, user common.User2) error {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserDel(ctx context.Context, user common.User) error {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func (fs fs) UserDel(ctx context.Context, user common.User2) error {
 	// Delete notes
 
 	iter := conn.Collection("notes").
-		Where("UserId", "==", user.ID()).
+		Where("UserID", "==", user.ID()).
 		Documents(ctx)
 	defer iter.Stop()
 
@@ -170,8 +171,8 @@ func (fs fs) UserDel(ctx context.Context, user common.User2) error {
 	return nil
 }
 
-func (fs fs) NoteGetLatest(ctx context.Context, user common.User2) (common.Note2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) NoteGetLatest(ctx context.Context, user common.User) (common.Note, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +186,11 @@ func (fs fs) NoteGetLatest(ctx context.Context, user common.User2) (common.Note2
 	defer iter.Stop()
 
 	doc, err := iter.Next()
+	if err == iterator.Done {
+		return nil, nil
+	}
 	if err != nil {
-		return nil, errors.New("failed to find note")
+		return nil, errors.Wrap(err, "failed to find note")
 	}
 
 	note := Note{ref: doc.Ref}
@@ -205,23 +209,26 @@ func (fs fs) NoteGetLatest(ctx context.Context, user common.User2) (common.Note2
 	return &note, nil
 }
 
-func (fs fs) NoteGetLatestWithTime(ctx context.Context, user common.User2, t time.Duration) (common.Note2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) NoteGetLatestWithTime(ctx context.Context, user common.User, t time.Duration) (common.Note, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	iter := conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
-		Where("NoteCreatedAt", ">==", time.Now().UTC().Add(-t).Unix()). // Negate .Add, awesome.
+		Where("NoteCreatedAt", ">=", time.Now().UTC().Add(-t).Unix()). // Negate .Add, awesome.
 		OrderBy("NoteCreatedAt", firestore.Desc).
 		Limit(1).
 		Documents(ctx)
 	defer iter.Stop()
 
 	doc, err := iter.Next()
+	if err == iterator.Done {
+		return nil, nil
+	}
 	if err != nil {
-		return nil, errors.New("failed to find note")
+		return nil, errors.Wrap(err, "failed to find note")
 	}
 
 	note := Note{ref: doc.Ref}
@@ -240,26 +247,22 @@ func (fs fs) NoteGetLatestWithTime(ctx context.Context, user common.User2, t tim
 	return &note, nil
 }
 
-func (fs fs) NoteGetList(ctx context.Context, user common.User2, page, count int) ([]common.Note2, bool, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) NoteGetList(ctx context.Context, user common.User, page, count int) ([]common.Note, bool, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, false, err
 	}
 
 	iter := conn.Collection("notes").
-		Where("UserId", "==", user.ID()).
-		StartAt(page * count).
-		Limit(count + 1).
+		Where("UserID", "==", user.ID()).
+		Offset(page*count).
+		Limit(count+1).
+		OrderBy("NoteCreatedAt", firestore.Desc).
 		Documents(ctx)
-
 	defer iter.Stop()
 
-	var ret []common.Note2
-	i := 0
-
+	var ret []common.Note
 	for {
-		i++ // TODO: first or last?
-
 		doc, err := iter.Next()
 		if err == iterator.Done {
 			break
@@ -281,9 +284,11 @@ func (fs fs) NoteGetList(ctx context.Context, user common.User2, page, count int
 
 		note.token = token
 		note.fs = fs
+
+		ret = append(ret, note)
 	}
 
-	hasMore := len(ret) > i
+	hasMore := len(ret) > count
 	if hasMore {
 		ret = ret[:len(ret)-1] /* all but last */
 	}
@@ -291,8 +296,8 @@ func (fs fs) NoteGetList(ctx context.Context, user common.User2, page, count int
 	return ret, hasMore, nil
 }
 
-func (fs fs) NoteCreate(ctx context.Context, user common.User2, text string) (common.Note2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) NoteCreate(ctx context.Context, user common.User, text string) (common.Note, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -321,8 +326,8 @@ func (fs fs) NoteCreate(ctx context.Context, user common.User2, text string) (co
 	return &note, nil
 }
 
-func (fs fs) UserGet(ctx context.Context, token string) (common.User2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserGet(ctx context.Context, token string) (common.User, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -345,8 +350,8 @@ func (fs fs) UserGet(ctx context.Context, token string) (common.User2, error) {
 	return fs.snaptouser(ctx, snap)
 }
 
-func (fs fs) UserGetByNumber(ctx context.Context, phone string) (common.User2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserGetByNumber(ctx context.Context, phone string) (common.User, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -356,8 +361,8 @@ func (fs fs) UserGetByNumber(ctx context.Context, phone string) (common.User2, e
 	return fs.itertouser(ctx, iter)
 }
 
-func (fs fs) UserGetByUsername(ctx context.Context, username string) (common.User2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserGetByUsername(ctx context.Context, username string) (common.User, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -367,8 +372,8 @@ func (fs fs) UserGetByUsername(ctx context.Context, username string) (common.Use
 	return fs.itertouser(ctx, iter)
 }
 
-func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.User2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.User, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -401,8 +406,8 @@ func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.
 	return &user, nil
 }
 
-func (fs fs) UserCreate(ctx context.Context, username, plaintext, phone string) (common.User2, error) {
-	conn, err := fs.getconn(&ctx)
+func (fs fs) UserCreate(ctx context.Context, username, plaintext, phone string) (common.User, error) {
+	conn, err := fs.getconn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -494,7 +499,7 @@ func (User *User) Save(ctx context.Context) error {
 		return User.err
 	}
 
-	conn, err := User.fs.getconn(&ctx)
+	conn, err := User.fs.getconn(ctx)
 	if err != nil {
 		return err
 	}

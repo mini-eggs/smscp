@@ -5,7 +5,6 @@ import (
 
 	"smscp.xyz/internal/api"
 	"smscp.xyz/internal/csv"
-	"smscp.xyz/internal/db"
 	"smscp.xyz/internal/db/fs"
 	"smscp.xyz/internal/security"
 	"smscp.xyz/internal/sms/twilio"
@@ -16,13 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var databaseConn, databaseErr = db.ConnDefault()
-
 func Build(m mode.Mode) (*gin.Engine, error) {
-	if databaseErr != nil {
-		return nil, databaseErr
-	}
-
 	if m == mode.Test {
 		gin.SetMode(gin.TestMode)
 	}
@@ -35,22 +28,19 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 
 	security := security.Default(os.Getenv("JWT_SECRET"))
 
-	data := db.Default(databaseConn, security, os.Getenv("MIGRATION_KEY"))
-	data.SetMode(m)
-
 	// For firestore rewrite, temp.
-	data2 := fs.Default(os.Getenv("GOOGLE_PROJECT_ID"), security)
+	data := fs.Default(os.Getenv("GOOGLE_PROJECT_ID"), security)
+	router.Use(data.Middleware)
 
 	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM") /* data */)
 
 	csv := csv.Default()
-	app := api.AppDefault(data, data2, sms, csv, security)
+	app := api.AppDefault(data, sms, csv, security)
 
 	router.GET("/", app.Page)
 	router.POST("/", app.Page)
 
 	router.GET("/ping", app.Pong)
-	router.POST("/migrate", app.MigrateDB)
 
 	router.POST("/user/login", app.UserLogin)
 	router.POST("/user/create", app.UserCreate)

@@ -15,7 +15,7 @@ type CSV struct{}
 
 func Default() (csv CSV) { return }
 
-func (csv CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg */) (*os.File, error) {
+func (csv CSV) ToFile(user common.User, notes []common.Note) (*os.File, error) {
 	file, err := ioutil.TempFile("", fmt.Sprintf("%s_results.csv", url.QueryEscape(user.Username())))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create csv file")
@@ -62,18 +62,6 @@ func (csv CSV) ToFile(user common.User, notes []common.Note /* msgs []common.Msg
 			return nil, errors.Wrap(err, "failed to write notes to csv")
 		}
 	}
-
-	// // msgs
-	// for _, value := range msgs {
-	// 	data := []string{
-	// 		fmt.Sprintf("%d", value.ID()),
-	// 		value.Token(),
-	// 		value.Text(),
-	// 	}
-	// 	if err := writer.Write(data); err != nil {
-	// 		return nil, errors.Wrap(err, "failed to write messages to csv")
-	// 	}
-	// }
 
 	return file, nil
 }

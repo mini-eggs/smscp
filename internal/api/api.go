@@ -19,12 +19,11 @@ import (
 )
 
 type App struct {
-	data  dataLayer
-	data2 fsDataLayer
-	sms   smsLayer
-	csv   csvLayer
-	sec   securityLayer
-	cfg   cfg
+	data dataLayer
+	sms  smsLayer
+	csv  csvLayer
+	sec  securityLayer
+	cfg  cfg
 }
 
 type cfg struct {
@@ -38,44 +37,23 @@ const (
 
 type dataLayer interface {
 	// user
-	UserGet(token string) (common.User, error)
-	UserGetByNumber(number string) (common.User, error)
-	UserGetByUsername(username string) (common.User, error)
-	UserLogin(username, pass string) (common.User, error)
-	UserCreate(username, pass, phone string) (common.User, error)
+	UserGet(ctx context.Context, token string) (common.User, error)
+	UserGetByNumber(ctx context.Context, number string) (common.User, error)
+	UserGetByUsername(ctx context.Context, username string) (common.User, error)
+	UserLogin(ctx context.Context, username, pass string) (common.User, error)
+	UserCreate(ctx context.Context, username, pass, phone string) (common.User, error)
 	// notes
-	NoteGetList(user common.User, page, count int) ([]common.Note, bool, error)
-	NoteGetLatest(user common.User) (common.Note, error)
-	NoteGetLatestWithTime(user common.User, t time.Duration) (common.Note, error)
-	NoteCreate(user common.User, text string) (common.Note, error)
-	// special database
-	Migrate(key string) error
+	NoteGetList(ctx context.Context, user common.User, page, count int) ([]common.Note, bool, error)
+	NoteGetLatest(ctx context.Context, user common.User) (common.Note, error)
+	NoteGetLatestWithTime(ctx context.Context, user common.User, t time.Duration) (common.Note, error)
+	NoteCreate(ctx context.Context, user common.User, text string) (common.Note, error)
 	// special gdpr
-	UserAll(common.User) ([]common.Note /* []common.Msg, */, error)
-	UserDel(common.User) error
-}
-
-type fsDataLayer interface {
-	// user
-	UserGet(ctx context.Context, token string) (common.User2, error)
-	UserGetByNumber(ctx context.Context, number string) (common.User2, error)
-	UserGetByUsername(ctx context.Context, username string) (common.User2, error)
-	UserLogin(ctx context.Context, username, pass string) (common.User2, error)
-	UserCreate(ctx context.Context, username, pass, phone string) (common.User2, error)
-	// notes
-	NoteGetList(ctx context.Context, user common.User2, page, count int) ([]common.Note2, bool, error)
-	NoteGetLatest(ctx context.Context, user common.User2) (common.Note2, error)
-	NoteGetLatestWithTime(ctx context.Context, user common.User2, t time.Duration) (common.Note2, error)
-	NoteCreate(ctx context.Context, user common.User2, text string) (common.Note2, error)
-	// special database
-	// Migrate(key string) error // Don't need!
-	// special gdpr
-	UserAll(context.Context, common.User2) ([]common.Note2, error)
-	UserDel(context.Context, common.User2) error
+	UserAll(context.Context, common.User) ([]common.Note, error)
+	UserDel(context.Context, common.User) error
 }
 
 type csvLayer interface {
-	ToFile(common.User, []common.Note /* []common.Msg */) (*os.File, error)
+	ToFile(common.User, []common.Note) (*os.File, error)
 }
 
 type smsLayer interface {
@@ -88,10 +66,9 @@ type securityLayer interface {
 	TokenFrom(tokenString string) (jwt.MapClaims, error)
 }
 
-func AppDefault(data dataLayer, data2 fsDataLayer, sms smsLayer, csv csvLayer, sec securityLayer) App {
+func AppDefault(data dataLayer, sms smsLayer, csv csvLayer, sec securityLayer) App {
 	return App{
 		data,
-		data2,
 		sms,
 		csv,
 		sec,
@@ -106,13 +83,13 @@ func (app App) HookSMS(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserGetByNumber(num)
+	user, err := app.data.UserGetByNumber(c, num)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
 
-	_, err = app.data.NoteCreate(user, text)
+	_, err = app.data.NoteCreate(c, user, text)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -138,7 +115,7 @@ func (app App) NoteCreate(c *gin.Context) {
 		return
 	}
 
-	note, err := app.data.NoteCreate(user, payload.Text)
+	note, err := app.data.NoteCreate(c, user, payload.Text)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -163,13 +140,13 @@ func (app App) NoteCreateCLI(c *gin.Context) {
 		return
 	}
 
-	user, err := app.currentUserFromToken(payload.Token)
+	user, err := app.currentUserFromToken(c, payload.Token)
 	if err != nil {
 		app.error(c, errors.New("not logged in; or something else terribly wrong"))
 		return
 	}
 
-	note, err := app.data.NoteCreate(user, payload.Text)
+	note, err := app.data.NoteCreate(c, user, payload.Text)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -194,13 +171,13 @@ func (app App) NoteLatestCLI(c *gin.Context) {
 		return
 	}
 
-	user, err := app.currentUserFromToken(payload.Token)
+	user, err := app.currentUserFromToken(c, payload.Token)
 	if err != nil {
 		app.error(c, errors.New("not logged in; or something else terribly wrong"))
 		return
 	}
 
-	note, err := app.data.NoteGetLatest(user)
+	note, err := app.data.NoteGetLatest(c, user)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -220,13 +197,13 @@ func (app App) UserLogin(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserLogin(payload.Username, payload.Password)
+	user, err := app.data.UserLogin(c, payload.Username, payload.Password)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
 
-	fsUser, err := app.data2.UserLogin(c, payload.Username, payload.Password)
+	fsUser, err := app.data.UserLogin(c, payload.Username, payload.Password)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -254,7 +231,7 @@ func (app App) UserLoginCLI(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserLogin(payload.Username, payload.Password)
+	user, err := app.data.UserLogin(c, payload.Username, payload.Password)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -289,18 +266,11 @@ func (app App) UserCreate(c *gin.Context) {
 	}
 	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
 
-	user, err := app.data.UserCreate(payload.Username, payload.Password, full)
+	user, err := app.data.UserCreate(c, payload.Username, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
-
-	fsUser, err := app.data2.UserCreate(c, payload.Username, payload.Password, full)
-	if err != nil {
-		app.error(c, err)
-		return
-	}
-	_ = fsUser
 
 	s := sessions.Default(c)
 	s.Set(sessionKeyUserToken, user.Token())
@@ -338,7 +308,7 @@ func (app App) UserCreateCLI(c *gin.Context) {
 	}
 	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
 
-	user, err := app.data.UserCreate(payload.Username, payload.Password, full)
+	user, err := app.data.UserCreate(c, payload.Username, payload.Password, full)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -396,7 +366,7 @@ func (app App) UserUpdate(c *gin.Context) {
 		user.SetPhone(fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber()))
 	}
 
-	err = user.Save()
+	err = user.Save(c)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -435,13 +405,13 @@ func (app App) Page(c *gin.Context) {
 	}
 
 	page := 0
-	notes, hasMore, err := app.data.NoteGetList(user, page, perPage)
+	notes, hasMore, err := app.data.NoteGetList(c, user, page, perPage)
 	if err != nil {
 		app.error(c, err)
 		return
 	}
 
-	latest, err := app.data.NoteGetLatestWithTime(user, 5*time.Minute)
+	latest, err := app.data.NoteGetLatestWithTime(c, user, 5*time.Minute)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -472,7 +442,7 @@ func (app App) NoteListJSON(c *gin.Context) {
 		return
 	}
 
-	notes, hasMore, err := app.data.NoteGetList(user, page, perPage)
+	notes, hasMore, err := app.data.NoteGetList(c, user, page, perPage)
 	if err != nil {
 		app.error(c, err)
 		return
@@ -490,33 +460,17 @@ func (app App) Pong(c *gin.Context) {
 	c.String(http.StatusOK, "pong")
 }
 
-func (app App) MigrateDB(c *gin.Context) {
-	var payload struct{ MigrationKey string }
-
-	if err := c.Bind(&payload); err != nil {
-		app.error(c, errors.Wrap(err, "not a valid migration payload"))
-		return
-	}
-
-	if err := app.data.Migrate(payload.MigrationKey); err != nil {
-		app.error(c, errors.Wrap(err, "failed to run migration"))
-		return
-	}
-
-	c.String(http.StatusOK, "migration complete")
-}
-
 func (app App) currentUser(c *gin.Context) (common.User, error) {
 	s := sessions.Default(c)
 	token, ok := s.Get(sessionKeyUserToken).(string)
 	if !ok {
 		return nil, errors.New("no session available; no user")
 	}
-	return app.currentUserFromToken(token)
+	return app.currentUserFromToken(c, token)
 }
 
-func (app App) currentUserFromToken(token string) (common.User, error) {
-	user, err := app.data.UserGet(token)
+func (app App) currentUserFromToken(ctx context.Context, token string) (common.User, error) {
+	user, err := app.data.UserGet(ctx, token)
 	return user, err
 }
 
@@ -531,13 +485,13 @@ func (app App) UserExportAllData(c *gin.Context) {
 		return
 	}
 
-	notes /* messages, */, err := app.data.UserAll(user)
+	notes /* messages, */, err := app.data.UserAll(c, user)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "failed to retrieve user data"))
 		return
 	}
 
-	file, err := app.csv.ToFile(user, notes /* , messages */)
+	file, err := app.csv.ToFile(user, notes)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "failed to generate csv file export"))
 		return
@@ -563,7 +517,7 @@ func (app App) UserDeleteAllData(c *gin.Context) {
 		return
 	}
 
-	if err := app.data.UserDel(user); err != nil {
+	if err := app.data.UserDel(c, user); err != nil {
 		app.error(c, errors.Wrap(err, "failed to delete user data"))
 		return
 	}
@@ -578,7 +532,7 @@ func (app App) UserForgotPassword(c *gin.Context) {
 		return
 	}
 
-	user, err := app.data.UserGetByUsername(payload.Username)
+	user, err := app.data.UserGetByUsername(c, payload.Username)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "no user"))
 		return
@@ -663,14 +617,14 @@ func (app App) UserForgotPasswordNewPassword(c *gin.Context) {
 		return
 	}
 
-	user, err := app.currentUserFromToken(tokenStr)
+	user, err := app.currentUserFromToken(c, tokenStr)
 	if err != nil {
 		app.error(c, errors.Wrap(err, "this token does not represent a user; broken token"))
 		return
 	}
 
 	user.SetPass(payload.Password)
-	if err := user.Save(); err != nil {
+	if err := user.Save(c); err != nil {
 		app.error(c, errors.Wrap(err, "failed to update password"))
 		return
 	}

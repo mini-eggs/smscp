@@ -8,7 +8,6 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/sessions v0.0.1
 	github.com/gin-gonic/gin v1.4.0
-	github.com/jinzhu/gorm v1.9.11
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/sfreiberg/gotwilio v0.0.0-20191103223526-1b5db731dc0a
@@ -21,5 +20,6 @@ require (
 	golang.org/x/crypto v0.0.0-20191111213947-16651526fdb4
 	golang.org/x/exp v0.0.0-20190121172915-509febef88a4
 	google.golang.org/api v0.3.1
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1
 )

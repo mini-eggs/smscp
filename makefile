@@ -25,12 +25,6 @@ lint:
 	--enable=structcheck --enable=maligned --enable=errcheck --enable=dupl --enable=ineffassign \
 	--enable=interfacer --enable=unconvert --enable=goconst --enable=gosec --enable=megacheck
 
-migrate_dev:
-	bash -c "[[ "`curl -s http://localhost:3000/ping`" == pong ]] && curl 'http://localhost:3000/migrate' -H 'Content-Type: application/x-www-form-urlencoded' --data 'MigrationKey=`cat .env | grep MIGRATION_KEY | awk -F'[/=]' '{print\$$2}'`' && exit 0 || echo migration failed && exit 1"
-
-migrate_prod:
-	bash -c "[[ "`curl -s https://smscp.xyz/ping`" == pong ]] && curl 'https://smscp.xyz/migrate' -H 'Content-Type: application/x-www-form-urlencoded' --data 'MigrationKey=`cat .env | grep MIGRATION_KEY | awk -F'[/=]' '{print\$$2}'`' && exit 0 || echo migration failed && exit 1"
-
 cli: mac win lin
 
 mac: 
