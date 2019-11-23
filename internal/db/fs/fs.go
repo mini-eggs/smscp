@@ -392,7 +392,7 @@ func (fs fs) UserLogin(ctx context.Context, username, plaintext string) (common.
 		return nil, errors.Wrap(err, "user value corrupted")
 	}
 
-	if err := fs.sec.HashCompare(plaintext, user.UserEncryptedPassword); err != nil {
+	if err := fs.sec.HashCompare(user.ref.ID+plaintext, user.UserEncryptedPassword); err != nil {
 		return nil, errors.New("failed to login user; password hash not matched")
 	}
 
@@ -427,13 +427,14 @@ func (fs fs) UserCreate(ctx context.Context, username, plaintext, phone string) 
 		return nil, errors.New("phone already used; try reseting password")
 	}
 
-	pass, err := fs.sec.HashCreate(plaintext)
+	ref := conn.Collection("users").NewDoc()
+	pass, err := fs.sec.HashCreate(ref.ID + plaintext)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create hash for user password")
 	}
 
 	user := User{
-		ref:                   conn.Collection("users").NewDoc(),
+		ref:                   ref,
 		UserUsername:          username,
 		UserPhone:             phone,
 		UserEncryptedPassword: pass,
@@ -486,7 +487,7 @@ func (User *User) SetPass(plaintext string) {
 		return
 	}
 
-	pass, err := User.fs.sec.HashCreate(plaintext)
+	pass, err := User.fs.sec.HashCreate(User.ref.ID + plaintext)
 	if err != nil {
 		User.err = err
 		return
