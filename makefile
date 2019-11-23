@@ -3,17 +3,20 @@ dev:
 
 deploy: cli cpminify
 	now && now alias smscp.minieggs40.now.sh beta.smscp.xyz && \
-	rm -rf pkg/handler/web
+	rm -rf pkg/handler/web && \
+	rm pkg/handler/application_default_credentials.json
 
 push: 
 	now alias smscp.minieggs40.now.sh smscp.xyz
 
 yolo: cli cpminify
 	now && now alias smscp.minieggs40.now.sh smscp.xyz && \
-	rm -rf pkg/handler/web
+	rm -rf pkg/handler/web && \
+	rm pkg/handler/application_default_credentials.json
 
 cpminify:
 	cp -r web pkg/handler && \
+	cp application_default_credentials.json pkg/handler && \
 	bash -c "find pkg/handler/web/html -type f | grep -e '\.html' -e '\.css' -e '\.js' | xargs -I {} echo 'minify {} > {}.out && mv {}.out {}' | bash"
 
 test: 
