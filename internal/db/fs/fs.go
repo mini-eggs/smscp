@@ -6,10 +6,10 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"golang.org/x/exp/utf8string"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 	"smscp.xyz/internal/common"
 )
 
@@ -21,27 +21,15 @@ type securityLayer interface {
 }
 
 type FS struct {
-	firestoreProjectID string
-	sec                securityLayer
+	sec  securityLayer
+	conn *firestore.Client
 }
 
-const (
-	keyConn = "FIRESTORE_CONNECTION_KEY"
-)
-
-func Default(firestoreProjectID string, sec securityLayer) FS {
-	return FS{firestoreProjectID, sec}
+func Default(sec securityLayer, conn *firestore.Client) FS {
+	return FS{sec, conn}
 }
 
 // private
-
-func (fs FS) getconn(ctx context.Context) (*firestore.Client, error) {
-	val, ok := ctx.Value(keyConn).(*firestore.Client)
-	if !ok {
-		return nil, errors.New("database connection has not begun")
-	}
-	return val, nil
-}
 
 func (fs FS) snaptouser(ctx context.Context, doc *firestore.DocumentSnapshot) (common.User, error) {
 	user := User{ref: doc.Ref}
@@ -79,26 +67,14 @@ func (fs FS) toshort(text string) string {
 
 // public
 
-func (fs FS) Middleware(c *gin.Context) {
-	// Firestore connection per request.
-	client, err := firestore.NewClient(c, fs.firestoreProjectID)
-	if err != nil {
-		// Error will be caught later.
-		c.Next()
-		return
-	}
-	c.Set(keyConn, client)
-	c.Next()
-	defer client.Close()
+func ConnDefault(ctx context.Context, firestoreProjectID string) (*firestore.Client, error) {
+	// TODO: Good default connection pool options?
+	client, err := firestore.NewClient(ctx, firestoreProjectID, option.WithGRPCConnectionPool(100))
+	return client, err
 }
 
 func (fs FS) UserAll(ctx context.Context, user common.User) ([]common.Note, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("notes").
+	iter := fs.conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
 		OrderBy("NoteCreatedAt", firestore.Desc).
 		Documents(ctx)
@@ -135,14 +111,8 @@ func (fs FS) UserAll(ctx context.Context, user common.User) ([]common.Note, erro
 }
 
 func (fs FS) UserDel(ctx context.Context, user common.User) error {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Delete notes
-
-	iter := conn.Collection("notes").
+	iter := fs.conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
 		Documents(ctx)
 	defer iter.Stop()
@@ -164,8 +134,7 @@ func (fs FS) UserDel(ctx context.Context, user common.User) error {
 	}
 
 	// Delete user
-
-	if _, err := conn.Collection("users").Doc(user.ID()).Delete(ctx); err != nil {
+	if _, err := fs.conn.Collection("users").Doc(user.ID()).Delete(ctx); err != nil {
 		return errors.Wrap(err, "failed to delete user")
 	}
 
@@ -173,12 +142,7 @@ func (fs FS) UserDel(ctx context.Context, user common.User) error {
 }
 
 func (fs FS) NoteGetLatest(ctx context.Context, user common.User) (common.Note, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("notes").
+	iter := fs.conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
 		OrderBy("NoteCreatedAt", firestore.Desc).
 		Limit(1).
@@ -211,12 +175,7 @@ func (fs FS) NoteGetLatest(ctx context.Context, user common.User) (common.Note, 
 }
 
 func (fs FS) NoteGetLatestWithTime(ctx context.Context, user common.User, t time.Duration) (common.Note, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("notes").
+	iter := fs.conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
 		Where("NoteCreatedAt", ">=", time.Now().UTC().Add(-t).Unix()). // Negate .Add, awesome.
 		OrderBy("NoteCreatedAt", firestore.Desc).
@@ -249,12 +208,7 @@ func (fs FS) NoteGetLatestWithTime(ctx context.Context, user common.User, t time
 }
 
 func (fs FS) NoteGetList(ctx context.Context, user common.User, page, count int) ([]common.Note, bool, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-
-	iter := conn.Collection("notes").
+	iter := fs.conn.Collection("notes").
 		Where("UserID", "==", user.ID()).
 		Offset(page*count).
 		Limit(count+1).
@@ -298,20 +252,15 @@ func (fs FS) NoteGetList(ctx context.Context, user common.User, page, count int)
 }
 
 func (fs FS) NoteCreate(ctx context.Context, user common.User, text string) (common.Note, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	note := Note{
-		ref:           conn.Collection("notes").NewDoc(),
+		ref:           fs.conn.Collection("notes").NewDoc(),
 		NoteText:      text,
 		NoteShort:     fs.toshort(text),
 		NoteCreatedAt: time.Now().UTC().Unix(),
 		UserID:        user.ID(),
 	}
 
-	_, err = note.ref.Set(ctx, note)
+	_, err := note.ref.Set(ctx, note)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new note")
 	}
@@ -328,11 +277,6 @@ func (fs FS) NoteCreate(ctx context.Context, user common.User, text string) (com
 }
 
 func (fs FS) UserGet(ctx context.Context, token string) (common.User, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	claims, err := fs.sec.TokenFrom(token)
 	if err != nil {
 		return nil, errors.Wrap(err, "corrupted token")
@@ -343,7 +287,7 @@ func (fs FS) UserGet(ctx context.Context, token string) (common.User, error) {
 		return nil, errors.New("invalid token or no user in token")
 	}
 
-	snap, err := conn.Collection("users").Doc(id).Get(ctx)
+	snap, err := fs.conn.Collection("users").Doc(id).Get(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find user")
 	}
@@ -352,34 +296,19 @@ func (fs FS) UserGet(ctx context.Context, token string) (common.User, error) {
 }
 
 func (fs FS) UserGetByNumber(ctx context.Context, phone string) (common.User, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("users").Where("UserPhone", "==", phone).Documents(ctx)
+	iter := fs.conn.Collection("users").Where("UserPhone", "==", phone).Documents(ctx)
 	defer iter.Stop()
 	return fs.itertouser(ctx, iter)
 }
 
 func (fs FS) UserGetByUsername(ctx context.Context, username string) (common.User, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
+	iter := fs.conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
 	defer iter.Stop()
 	return fs.itertouser(ctx, iter)
 }
 
 func (fs FS) UserLogin(ctx context.Context, username, plaintext string) (common.User, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	iter := conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
+	iter := fs.conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
 	defer iter.Stop()
 
 	doc, err := iter.Next()
@@ -408,26 +337,21 @@ func (fs FS) UserLogin(ctx context.Context, username, plaintext string) (common.
 }
 
 func (fs FS) UserCreate(ctx context.Context, username, plaintext, phone string) (common.User, error) {
-	conn, err := fs.getconn(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// Check username taken.
-	usernameIter := conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
+	usernameIter := fs.conn.Collection("users").Where("UserUsername", "==", username).Documents(ctx)
 	defer usernameIter.Stop()
-	if _, err = usernameIter.Next(); err != iterator.Done {
+	if _, err := usernameIter.Next(); err != iterator.Done {
 		return nil, errors.New("username already exists")
 	}
 
 	// Check phone taken.
-	phoneIter := conn.Collection("users").Where("UserPhone", "==", phone).Documents(ctx)
+	phoneIter := fs.conn.Collection("users").Where("UserPhone", "==", phone).Documents(ctx)
 	defer phoneIter.Stop()
-	if _, err = phoneIter.Next(); err != iterator.Done {
+	if _, err := phoneIter.Next(); err != iterator.Done {
 		return nil, errors.New("phone already used; try reseting password")
 	}
 
-	ref := conn.Collection("users").NewDoc()
+	ref := fs.conn.Collection("users").NewDoc()
 	pass, err := fs.sec.HashCreate(ref.ID + plaintext)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create hash for user password")
@@ -501,12 +425,7 @@ func (user *User) Save(ctx context.Context) error {
 		return user.err
 	}
 
-	conn, err := user.fs.getconn(ctx)
-	if err != nil {
-		return err
-	}
-
-	if _, err = conn.Collection("users").Doc(user.ID()).Set(ctx, user); err != nil {
+	if _, err := user.fs.conn.Collection("users").Doc(user.ID()).Set(ctx, user); err != nil {
 		return errors.Wrap(err, "failed to update user")
 	}
 

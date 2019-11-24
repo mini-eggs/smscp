@@ -1,6 +1,8 @@
 package builder
 
 import (
+	"context"
+	"net/http"
 	"os"
 
 	"smscp.xyz/internal/api"
@@ -15,7 +17,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Build(m mode.Mode) (*gin.Engine, error) {
+type App struct{ router *gin.Engine }
+
+var dbConn, dbErr = fs.ConnDefault(context.Background(), os.Getenv("GOOGLE_PROJECT_ID"))
+
+func Build(m mode.Mode) (*App, error) {
+	if dbErr != nil {
+		return nil, dbErr
+	}
+
 	if m == mode.Test {
 		gin.SetMode(gin.TestMode)
 	}
@@ -27,11 +37,7 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	router.Use(sessions.Sessions(os.Getenv("SESSION_NAME"), store))
 
 	security := security.Default(os.Getenv("JWT_SECRET"))
-
-	// For firestore rewrite, temp.
-	data := fs.Default(os.Getenv("GOOGLE_PROJECT_ID"), security)
-	router.Use(data.Middleware)
-
+	data := fs.Default(security, dbConn)
 	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM") /* data */)
 
 	csv := csv.Default()
@@ -66,5 +72,17 @@ func Build(m mode.Mode) (*gin.Engine, error) {
 	router.GET("/gdpr", app.UserExportAllData)
 	router.POST("/gdpr", app.UserDeleteAllData)
 
-	return router, nil
+	return &App{router}, nil
+}
+
+func (app App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	app.router.ServeHTTP(w, r)
+}
+
+func (app App) Run(opts ...string) error {
+	if err := app.router.Run(opts...); err != nil {
+		defer dbConn.Close()
+		return err
+	}
+	return nil
 }
