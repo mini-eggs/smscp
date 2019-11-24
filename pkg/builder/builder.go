@@ -7,7 +7,7 @@ import (
 
 	"smscp.xyz/internal/api"
 	"smscp.xyz/internal/csv"
-	"smscp.xyz/internal/db/fs"
+	"smscp.xyz/internal/fs"
 	"smscp.xyz/internal/security"
 	"smscp.xyz/internal/sms/twilio"
 	"smscp.xyz/pkg/mode"

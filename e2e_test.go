@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/davecgh/go-spew/spew"
 	"gopkg.in/go-playground/assert.v1"
 	"smscp.xyz/pkg/builder"
 	"smscp.xyz/pkg/mode"
@@ -90,11 +91,15 @@ func TestBasic(t *testing.T) {
 
 func TestUserCreationGood(t *testing.T) {
 	t.Parallel()
+	user := goodUser()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/user/create", nil)
-	req.PostForm = goodUser()
+	req.PostForm = user
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	server.ServeHTTP(w, req)
+	if w.Code != http.StatusTemporaryRedirect {
+		spew.Dump("TestUserCreationGood", w.Body.String(), user)
+	}
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 }
 
@@ -128,6 +133,9 @@ func TestUserUpdateGood(t *testing.T) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	w := httptest.NewRecorder()
 	server.ServeHTTP(w, req)
+	if w.Code != http.StatusTemporaryRedirect {
+		spew.Dump("TestUserUpdateGood", w.Body.String(), user)
+	}
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 
 	// modify user
@@ -222,6 +230,9 @@ func TestUserLoginBad(t *testing.T) {
 	req.PostForm = user
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	server.ServeHTTP(w, req)
+	if w.Code != http.StatusTemporaryRedirect {
+		spew.Dump("TestUserLoginBad", w.Body.String(), user)
+	}
 	assert.Equal(t, http.StatusTemporaryRedirect, w.Code)
 
 	// modify user
