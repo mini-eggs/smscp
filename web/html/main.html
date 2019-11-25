@@ -8,91 +8,7 @@
 <body class='bg-gray-100'>
   <style>
     {{ template "tailwind.min.css" }}
-
-    header {
-      min-height: 500px;
-      height: 50vh;
-      max-height: 700px;
-    }
-
-    @media (max-width: 768px) { 
-      header {
-        min-height: 450px;
-      }
-    }
-
-    header > span > i,
-    aside > span > i,
-    footer > span > i,
-    #bg-spacer > span > i {
-      width: 0; 
-      height: 0; 
-      border-top: 100px solid transparent;
-      border-right: 100vw solid #f7fafc;
-    }
-
-
-    aside > span:first-of-type > i {
-      border-right: 100vw solid #63b3ed;
-    }
-
-    aside > span:first-of-type,
-    footer > span:first-of-type,
-    #bg-spacer > span:last-of-type {
-      margin-top: -100px;
-    }
-
-    aside > span:last-of-type > i,
-    footer > span:last-of-type > i {
-      border-right: 100vw solid #4a5568;
-    }
-
-    #bg-spacer > span:last-of-type > i {
-      border-right: 100vw solid #bee3f8;
-    }
-
-    header > div {
-      background: linear-gradient(90deg,#51cefc,rgba(32,159,255,0));
-    }
-
-    @media (min-width: 768px) { 
-      header #tagline {
-        top: 50%;
-        transform: translateY(-50%);
-      }
-    }
-
-    main {
-      margin-bottom: -350px !important;
-    }
-
-    button, input[type='submit'] {
-      cursor: pointer;
-    }
-
-    video {
-      background-size: cover;
-    }
-
-    pre {
-      overflow: auto;
-      -webkit-overflow-scrolling: touch; 
-    }
-
-    #notes > div > div > span {
-      max-width: 5rem;
-    }
-    @media (min-width: 640px) { 
-      #notes > div > div > span {
-        max-width: 10rem;
-      }
-    }
-    @media (min-width: 768px) {
-      #notes > div > div > span {
-        max-width: 20rem;
-      }
-    }
-
+    {{ template "_main.css" }}
   </style>
 
   <header class='relative bg-blue-900'>
@@ -882,7 +798,6 @@
       }
     })();
     // forgot password + login click events
-    {{ if not .User }}
     (function() {
       var lbtn = document.getElementById('login-btn');
       var lform = document.getElementById('login');
@@ -891,6 +806,9 @@
       events(lbtn, lform, fform);
       events(fbtn, fform, lform);
       function events(btn, enable, disable) {
+        if (!btn) {
+          return
+        }
         btn.addEventListener('click', function(e) {
           e.stopPropagation();
           e.preventDefault();
@@ -900,7 +818,6 @@
         });
       }
     })();
-    {{ end }}
     // register and login buttons
     (function() {
       withEvents(
