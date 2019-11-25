@@ -156,38 +156,40 @@
     {{ if .HasUser }}
     <span class='z-30 absolute bottom-0 left-0 w-full'>
       <div class='mx-5 lg:mx-0 -mb-5'>
-        <div class='bg-white shadow-xl rounded max-w-4xl mx-auto p-5 pt-0'>
-          <form action='/note/create' method='POST' class='py-5'>
-            <fieldset>
-              <legend class='block text-grey-700 text-xl font-bold mb-5'>
-                Send to phone
-              </legend>
-              <div class='mt-1'>
-                <label class='block text-grey-700 text-sm font-bold mb-2'
-                       for='note-text'>
-                  Text
-                </label>
-                <div class='flex shadow rounded'>
-                  <input type='text' 
-                         autofocus
-                         required 
-                         placeholder='Text' 
-                         onfocus="this.parentElement.classList.add('shadow-outline')"
-                         onblur="this.parentElement.classList.remove('shadow-outline')"
-                         id='note-text'
-                         name='Text'
-                         class='appearance-none border w-full py-2 px-3
-                                rounded-l text-grey-700 leading-tight focus:outline-none text-md' />
-                  <input class="bg-blue-500 hover:bg-blue-700 text-white
-                                rounded-r font-bold py-2 px-4  text-md"
-                         onfocus="this.parentElement.classList.add('shadow-outline')"
-                         onblur="this.parentElement.classList.remove('shadow-outline')"
-                         value='Send'
-                         type="submit"/>
+        <div class='max-w-4xl mx-auto w-full rounded'>
+          <div class='bg-white shadow-xl rounded p-5 pt-0'>
+            <form id='create' action='/note/create' method='POST' class='py-5'>
+              <fieldset>
+                <legend class='block text-grey-700 text-xl font-bold mb-5'>
+                  Send to phone
+                </legend>
+                <div class='mt-1'>
+                  <label class='block text-grey-700 text-sm font-bold mb-2'
+                         for='note-text'>
+                    Text
+                  </label>
+                  <div class='flex shadow rounded'>
+                    <input type='text' 
+                           autofocus
+                           required 
+                           placeholder='Text' 
+                           onfocus="this.parentElement.classList.add('shadow-outline')"
+                           onblur="this.parentElement.classList.remove('shadow-outline')"
+                           id='note-text'
+                           name='Text'
+                           class='appearance-none border w-full py-2 px-3
+                                  rounded-l text-grey-700 leading-tight focus:outline-none text-md' />
+                    <input class="bg-blue-500 hover:bg-blue-700 text-white
+                                  rounded-r font-bold py-2 px-4  text-md"
+                           onfocus="this.parentElement.classList.add('shadow-outline')"
+                           onblur="this.parentElement.classList.remove('shadow-outline')"
+                           value='Send'
+                           type="submit"/>
+                  </div>
                 </div>
-              </div>
-            </fieldset>
-          </form>
+              </fieldset>
+            </form>
+          </div>
         </div>
       </div>
     </span>
@@ -275,7 +277,7 @@
             How do I copy text to my phone?
           </h3> 
           <p class='text-base mb-10 text-gray-700'>
-            <a class='text-pink-600' href='#create-link'>Enter the text in the input below and press send!</a> 
+            <a class='text-pink-600' href='#create-link'>Enter the text in the input above and press send!</a> 
             As easy as that. Within seconds you will receive a sms message with
             the input provided. Once the sms has been received open your phone,
             and press/hold the sms message itself, this will prompt a menu
@@ -880,6 +882,7 @@
       }
     })();
     // forgot password + login click events
+    {{ if not .User }}
     (function() {
       var lbtn = document.getElementById('login-btn');
       var lform = document.getElementById('login');
@@ -897,6 +900,7 @@
         });
       }
     })();
+    {{ end }}
     // register and login buttons
     (function() {
       withEvents(
@@ -940,7 +944,6 @@
           var container = el;
           while(!container.classList.contains('shadow-outline')) {
             if(container.classList.contains('w-full')) {
-              console.log({container})
               container.classList.add('shadow-outline');
             }
             else {
