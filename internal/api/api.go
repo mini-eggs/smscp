@@ -136,24 +136,24 @@ func (app App) NoteCreateCLI(c *gin.Context) {
 
 	err := c.Bind(&payload)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	user, err := app.currentUserFromToken(c, payload.Token)
 	if err != nil {
-		app.error(c, errors.New("not logged in; or something else terribly wrong"))
+		app.errorCLI(c, errors.New("not logged in; or something else terribly wrong"))
 		return
 	}
 
 	note, err := app.data.NoteCreate(c, user, payload.Text)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	if err := app.sms.Send(user.Phone(), note.Text()); err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
@@ -167,19 +167,19 @@ func (app App) NoteLatestCLI(c *gin.Context) {
 
 	err := c.Bind(&payload)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	user, err := app.currentUserFromToken(c, payload.Token)
 	if err != nil {
-		app.error(c, errors.New("not logged in; or something else terribly wrong"))
+		app.errorCLI(c, errors.New("not logged in; or something else terribly wrong"))
 		return
 	}
 
 	note, err := app.data.NoteGetLatest(c, user)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
@@ -227,13 +227,13 @@ func (app App) UserLoginCLI(c *gin.Context) {
 
 	err := c.Bind(&payload)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	user, err := app.data.UserLogin(c, payload.Username, payload.Password)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
@@ -289,35 +289,35 @@ func (app App) UserCreateCLI(c *gin.Context) {
 
 	err := c.Bind(&payload)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	if payload.Password != payload.Verify || payload.Password == "" {
-		app.error(c, errors.New("invalid password; either not equal or no password entered"))
+		app.errorCLI(c, errors.New("invalid password; either not equal or no password entered"))
 		return
 	}
 
 	phone, err := libphonenumber.Parse(payload.Phone, "US")
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	} else if !libphonenumber.IsValidNumber(phone) {
-		app.error(c, errors.New("invalid phone number; try again"))
+		app.errorCLI(c, errors.New("invalid phone number; try again"))
 		return
 	}
 	full := fmt.Sprintf("%d%d", phone.GetCountryCode(), phone.GetNationalNumber())
 
 	user, err := app.data.UserCreate(c, payload.Username, payload.Password, full)
 	if err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
 	s := sessions.Default(c)
 	s.Set(sessionKeyUserToken, user.Token())
 	if err := s.Save(); err != nil {
-		app.error(c, err)
+		app.errorCLI(c, err)
 		return
 	}
 
@@ -475,10 +475,13 @@ func (app App) currentUserFromToken(ctx context.Context, token string) (common.U
 }
 
 func (app App) error(c *gin.Context, err error) {
-	// c.String(http.StatusInternalServerError, err.Error())
 	c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 		"Error": err.Error(),
 	})
+}
+
+func (app App) errorCLI(c *gin.Context, err error) {
+	c.String(http.StatusInternalServerError, err.Error())
 }
 
 func (app App) UserExportAllData(c *gin.Context) {
