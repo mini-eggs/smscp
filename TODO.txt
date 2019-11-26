@@ -1,7 +1,0 @@
-1. Forgot password. Use text w/ magic link to reset.
-2. Handle p2 appropriately. Give links to how data is used (or rather not used)
-  and provide a way to delete all data (notes) and user account. Also, maybe, a
-  way to export data?
-3. 'Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗' - Twilio fails silently on this input.
-4. '❤️ 💔 💌 💕 💞 💓 💗 💖 💘 💝 💟 💜 💛 💚 💙' - our DB fails on this input.
-5. Expire forgot password links.

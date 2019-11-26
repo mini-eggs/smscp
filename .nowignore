@@ -1,2 +1,5 @@
 gin-bin
 cmd
+cypress.json
+cypress
+node_modules
