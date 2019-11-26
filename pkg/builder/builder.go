@@ -38,7 +38,7 @@ func Build(m mode.Mode) (*App, error) {
 
 	security := security.Default(os.Getenv("JWT_SECRET"))
 	data := fs.Default(security, dbConn)
-	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM") /* data */)
+	sms := twilio.Default(os.Getenv("TWILIO_ID"), os.Getenv("TWILIO_SECRET"), os.Getenv("TWILIO_FROM"))
 
 	csv := csv.Default()
 	app := api.AppDefault(data, sms, csv, security)
