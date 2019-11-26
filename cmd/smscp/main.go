@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -280,9 +280,9 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "smscp"
 	app.Usage = "CLI for https://smscp.xyz/"
-	app.Version = "0.1.4"
+	app.Version = "0.1.7"
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		{Name: "register", Action: register},
 		{Name: "login", Action: login},
 		{Name: "new", Action: create},
