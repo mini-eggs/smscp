@@ -17,8 +17,7 @@ require (
 	github.com/tdewolff/test v1.0.5 // indirect
 	github.com/ttacon/builder v0.0.0-20170518171403-c099f663e1c2 // indirect
 	github.com/ttacon/libphonenumber v1.0.1
-	github.com/urfave/cli v1.22.1
-	golang.org/x/crypto v0.0.0-20191111213947-16651526fdb4
+	golang.org/x/crypto v0.1.0
 	golang.org/x/exp v0.0.0-20190121172915-509febef88a4
 	google.golang.org/api v0.3.1
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
